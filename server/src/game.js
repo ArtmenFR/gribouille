@@ -1,7 +1,7 @@
 // Moteur de jeu : salons à code, tours, mots, indices, scores.
 // Règle d'or anti-triche : le mot n'est JAMAIS envoyé à un joueur qui doit le deviner.
 import crypto from 'node:crypto';
-import { PACKS, PRESETS, PACK_LIST, PRESET_LIST } from './words.js';
+import { PACKS, PRESETS, PACK_LIST, PRESET_LIST, DEFAULT_PACKS, cleanPacks } from './words.js';
 import { recordGame } from './store.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -116,7 +116,7 @@ class Room {
     this.players = new Map();
     this.hostId = null;
     this.kicked = new Set();
-    this.settings = { preset: 'normal', pack: 'classique', rounds: 3, drawTime: 80, maxPlayers: 10, hints: true, customOnly: false, customWords: [] };
+    this.settings = { preset: 'normal', packs: [...DEFAULT_PACKS], rounds: 3, drawTime: 80, maxPlayers: 10, hints: true, customOnly: false, customWords: [] };
     this.turnLog = [];
     this.best = null;
     this.voteSettled = 0;
@@ -350,15 +350,16 @@ class Room {
     if (typeof s.preset === 'string' && Object.hasOwn(PRESETS, s.preset)) {
       // Un mode préréglé règle tout d'un coup
       const pr = PRESETS[s.preset];
-      Object.assign(st, { preset: s.preset, pack: pr.pack, rounds: pr.rounds, drawTime: pr.drawTime, hints: pr.hints });
+      Object.assign(st, { preset: s.preset, packs: [...pr.packs], rounds: pr.rounds, drawTime: pr.drawTime, hints: pr.hints });
     } else {
       // Un réglage changé à la main fait passer en mode « Perso »
-      const before = `${st.pack}|${st.rounds}|${st.drawTime}|${st.hints}`;
-      if (typeof s.pack === 'string' && Object.hasOwn(PACKS, s.pack)) st.pack = s.pack;
+      const before = `${st.packs.join()}|${st.rounds}|${st.drawTime}|${st.hints}`;
+      if (Array.isArray(s.packs)) st.packs = cleanPacks(s.packs);
+      else if (typeof s.pack === 'string') st.packs = cleanPacks([s.pack]); // ancien format
       if ('rounds' in s) st.rounds = clampInt(s.rounds, 1, 10, st.rounds);
       if ('drawTime' in s) st.drawTime = clampInt(s.drawTime, 30, 240, st.drawTime);
       if (typeof s.hints === 'boolean') st.hints = s.hints;
-      if (`${st.pack}|${st.rounds}|${st.drawTime}|${st.hints}` !== before) st.preset = 'perso';
+      if (`${st.packs.join()}|${st.rounds}|${st.drawTime}|${st.hints}` !== before) st.preset = 'perso';
     }
     if ('maxPlayers' in s) st.maxPlayers = clampInt(s.maxPlayers, 2, 16, st.maxPlayers);
     if (typeof s.customOnly === 'boolean') st.customOnly = s.customOnly;
@@ -419,7 +420,7 @@ class Room {
 
   pickWords(n) {
     const custom = this.settings.customWords;
-    const base = (PACKS[this.settings.pack] ?? PACKS.classique).words;
+    const base = [...new Set(cleanPacks(this.settings.packs).flatMap((id) => PACKS[id].words))];
     const pool = this.settings.customOnly && custom.length >= n ? custom : [...base, ...custom, ...custom];
     let avail = [...new Set(pool.filter((w) => !this.usedWords.has(w)))];
     if (avail.length < n) {

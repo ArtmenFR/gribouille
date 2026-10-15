@@ -1,5 +1,12 @@
 # Historique des versions
 
+## 1.3.0 · 15 octobre 2026
+
+- Thèmes de mots cochables et combinables dans le salon : on en choisit un ou plusieurs, les mots sont tirés dans tout ce qui est coché.
+- 11 thèmes et 999 mots différents. Nouveaux thèmes : Animaux, Aliments, Sucreries et desserts, Amour, Personnalités connues, Gros mots (+18).
+- Nouveaux modes préréglés : Gourmand, Love, Stars, Soirée. Le mode Hardcore combine les deux thèmes +18.
+- Les thèmes +18 sont signalés dans le salon.
+
 ## 1.2.2 · 15 octobre 2026
 
 - Les scripts et styles sont chargés avec le numéro de version dans leur adresse : après une mise à jour, le navigateur télécharge forcément la nouvelle version, même s'il gardait l'ancienne en cache.

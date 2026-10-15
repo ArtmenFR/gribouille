@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#1F2A27">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preload" href="fonts/shantell-sans-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="style.css?v=1.2.2">
+  <link rel="stylesheet" href="style.css?v=1.3.0">
 </head>
 <body>
 <div id="app">
@@ -137,7 +137,10 @@
         <div class="settings">
           <label class="field wide"><span>Mode de jeu</span><select id="set-preset"></select></label>
           <p class="note wide preset-desc" id="preset-desc"></p>
-          <label class="field wide"><span>Mots</span><select id="set-pack"></select></label>
+          <fieldset class="field wide packs-field">
+            <legend><span>Thèmes des mots</span> <small id="packs-count"></small></legend>
+            <div class="packs" id="set-packs"></div>
+          </fieldset>
           <label class="field"><span>Manches</span><select id="set-rounds"></select></label>
           <label class="field"><span>Temps par dessin</span><select id="set-time"></select></label>
           <label class="field"><span>Joueurs max</span><select id="set-max"></select></label>
@@ -240,8 +243,8 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="/socket.io/socket.io.min.js"></script>
-<script src="icons.js?v=1.2.2"></script>
-<script src="avatar.js?v=1.2.2"></script>
-<script src="app.js?v=1.2.2"></script>
+<script src="icons.js?v=1.3.0"></script>
+<script src="avatar.js?v=1.3.0"></script>
+<script src="app.js?v=1.3.0"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
-// Banque de mots de Gribouille, rangée par paquets, et modes de jeu préréglés.
-// Pour ajouter des mots : complète le paquet voulu. Pour un nouveau paquet :
-// ajoute une entrée dans PACKS (id, nom affiché, liste de mots).
+// Banque de mots de Gribouille, rangée par thèmes, et modes de jeu préréglés.
+// Les thèmes se combinent : l'hôte en coche un ou plusieurs dans le salon.
+// Pour ajouter des mots : complète le thème voulu. Pour un nouveau thème :
+// ajoute une entrée dans PACKS (nom affiché, liste de mots, adult si réservé aux +18).
 
 const ANIMAUX = [
   'chat', 'chien', 'lapin', 'souris', 'cochon', 'vache', 'mouton', 'cheval', 'poule', 'canard',
@@ -10,45 +11,91 @@ const ANIMAUX = [
   'hérisson', 'paresseux', 'chauve-souris', 'méduse', 'perroquet', 'koala', 'loup', 'renard', 'ours',
   'écureuil', 'castor', 'hippopotame', 'rhinocéros', 'gorille', 'paon', 'cygne', 'autruche', 'phoque',
   'morse', 'homard', 'étoile de mer', 'hippocampe', 'coccinelle', 'fourmi', 'moustique', 'ver de terre',
-  'chenille', 'scorpion', 'lama', 'yack', 'bison', 'cerf', 'licorne', 'dragon',
+  'chenille', 'scorpion', 'lama', 'yack', 'bison', 'cerf', 'licorne', 'dragon', 'poisson rouge',
+  'ours polaire', 'raton laveur', 'taupe', 'hamster', 'cochon d\'inde', 'poussin', 'dindon', 'chèvre',
+  'âne', 'mouette', 'pélican', 'toucan', 'colibri', 'caméléon', 'iguane', 'salamandre', 'lézard',
+  'orque', 'narval', 'raie', 'poulpe', 'crevette', 'moule', 'huître', 'libellule', 'sauterelle',
 ];
 
-const NOURRITURE = [
+const ALIMENTS = [
   'pomme', 'banane', 'fraise', 'cerise', 'ananas', 'pastèque', 'carotte', 'citrouille', 'champignon',
-  'croissant', 'baguette', 'pizza', 'hamburger', 'frites', 'glace', 'gâteau', 'bonbon', 'chocolat',
-  'café', 'fromage', 'œuf', 'kebab', 'sushi', 'hot-dog', 'popcorn', 'crêpe', 'raclette', 'brocoli',
-  'citron', 'raisin', 'poire', 'avocat', 'tomate', 'piment', 'oignon', 'ail', 'maïs', 'patate',
-  'spaghetti', 'lasagnes', 'tacos', 'burrito', 'donut', 'cookie', 'macaron', 'tarte', 'sandwich',
-  'soupe', 'salade', 'omelette', 'poulet rôti', 'saucisse', 'barbe à papa', 'sucette', 'milkshake',
-  'jus d\'orange', 'thé', 'biberon', 'pain au chocolat', 'éclair au chocolat', 'fondue', 'paella',
+  'croissant', 'baguette', 'pizza', 'hamburger', 'frites', 'fromage', 'œuf', 'kebab', 'sushi',
+  'hot-dog', 'popcorn', 'raclette', 'brocoli', 'citron', 'raisin', 'poire', 'avocat', 'tomate',
+  'piment', 'oignon', 'ail', 'maïs', 'patate', 'spaghetti', 'lasagnes', 'tacos', 'burrito', 'sandwich',
+  'soupe', 'salade', 'omelette', 'poulet rôti', 'saucisse', 'jus d\'orange', 'café', 'thé', 'biberon',
+  'pain au chocolat', 'fondue', 'paella', 'couscous', 'tajine', 'ramen', 'nems', 'dim sum',
+  'croque-monsieur', 'quiche', 'gratin', 'ratatouille', 'cassoulet', 'choucroute', 'steak',
+  'brochette', 'barbecue', 'fish and chips', 'moules-frites', 'escargots de bourgogne', 'cuisses de grenouille',
+  'camembert', 'baguette de pain', 'beurre', 'yaourt', 'lait', 'céréales', 'tartine', 'petit-déjeuner',
+  'noix de coco', 'mangue', 'kiwi', 'myrtille', 'framboise', 'pêche', 'abricot', 'prune', 'figue',
+  'concombre', 'courgette', 'aubergine', 'poivron', 'petits pois', 'haricots verts', 'radis', 'navet',
+  'olive', 'cornichon', 'ketchup', 'mayonnaise', 'moutarde', 'sel et poivre', 'riz', 'pâtes',
 ];
 
-const PERSONNAGES = [
+const SUCRERIES = [
+  'bonbon', 'sucette', 'chamallow', 'guimauve', 'réglisse', 'dragée', 'caramel', 'nougat', 'praline',
+  'sucre d\'orge', 'barbe à papa', 'chewing-gum', 'gâteau au chocolat', 'fondant au chocolat',
+  'forêt-noire', 'tarte aux fraises', 'tarte au citron', 'éclair au chocolat', 'religieuse',
+  'paris-brest', 'mille-feuille', 'macaron', 'cupcake', 'muffin', 'donut', 'brownie', 'cookie',
+  'crêpe', 'gaufre', 'churros', 'beignet', 'profiterole', 'île flottante', 'crème brûlée', 'tiramisu',
+  'mousse au chocolat', 'glace à la vanille', 'cornet de glace', 'coupe de glace', 'banana split',
+  'pain d\'épices', 'bûche de Noël', 'galette des rois', 'œuf de Pâques', 'lapin en chocolat',
+  'tablette de chocolat', 'pâte à tartiner', 'chocolat chaud', 'morceau de sucre', 'pot de miel',
+  'confiture', 'crème chantilly', 'pièce montée', 'gâteau d\'anniversaire', 'bougies d\'anniversaire',
+  'sorbet', 'esquimau', 'milkshake', 'smoothie', 'pomme d\'amour', 'calisson', 'canelé', 'madeleine',
+  'financier', 'chouquette', 'tarte tatin', 'clafoutis', 'flan', 'crumble', 'cheesecake', 'panna cotta',
+  'crêpe au sucre', 'bonbon acidulé', 'ourson en guimauve', 'dentier en bonbon', 'collier de bonbons',
+];
+
+const AMOUR = [
+  'cœur', 'bisou', 'câlin', 'rendez-vous', 'bouquet de roses', 'saint-valentin', 'demande en mariage',
+  'bague de fiançailles', 'lune de miel', 'coup de foudre', 'cupidon', 'flèche de cupidon',
+  'lettre d\'amour', 'chocolats en forme de cœur', 'dîner aux chandelles', 'slow', 'se tenir la main',
+  'papillons dans le ventre', 'chagrin d\'amour', 'cœur brisé', 'jalousie', 'crush', 'premier baiser',
+  'mariés', 'gâteau de mariage', 'robe de mariée', 'alliance', 'sérénade', 'balcon', 'Roméo et Juliette',
+  'couple', 'amoureux', 'pique-nique romantique', 'cadenas d\'amour', 'nounours géant', 'peluche',
+  'cœur dessiné dans le sable', 'regard amoureux', 'mariage', 'témoin de mariage', 'lancer de bouquet',
+  'voyage de noces', 'rose rouge', 'carte de saint-valentin', 'texto doux', 'appel vidéo', 'surnom mignon',
+  'amour à distance', 'rupture', 'réconciliation', 'demande à genoux', 'cœur avec une flèche',
+  'initiales gravées sur un arbre', 'coucher de soleil', 'baiser sous le gui', 'âme sœur',
+  'amitié', 'meilleur ami', 'câlin de groupe', 'bisou d\'esquimau',
+];
+
+// Personnalités connues : figures historiques, artistes, sportifs, chanteurs, scientifiques.
+const PERSONNALITES = [
+  'Napoléon', 'Jules César', 'Cléopâtre', 'Jeanne d\'Arc', 'Louis XIV', 'Marie-Antoinette',
+  'Toutânkhamon', 'Christophe Colomb', 'Neil Armstrong', 'Thomas Pesquet', 'Marie Curie',
+  'Albert Einstein', 'Isaac Newton', 'Charles Darwin', 'Léonard de Vinci', 'la Joconde', 'Picasso',
+  'Van Gogh', 'Mozart', 'Beethoven', 'Victor Hugo', 'Molière', 'Shakespeare', 'Charlie Chaplin',
+  'Marilyn Monroe', 'Elvis Presley', 'Michael Jackson', 'Freddie Mercury', 'Bob Marley',
+  'Édith Piaf', 'Johnny Hallyday', 'Céline Dion', 'Stromae', 'Zinédine Zidane', 'Kylian Mbappé',
+  'Lionel Messi', 'Cristiano Ronaldo', 'Usain Bolt', 'Teddy Riner', 'Tony Parker', 'Serena Williams',
+  'Mohamed Ali', 'Victor Wembanyama', 'Léon Marchand', 'Steve Jobs', 'Nelson Mandela',
+  'Gandhi', 'Martin Luther King', 'Robin des Bois', 'le roi Arthur', 'Merlin l\'enchanteur',
+  'Sherlock Holmes', 'Dracula', 'Frankenstein', 'Tarzan', 'Zorro', 'Astérix', 'Obélix',
+];
+
+const CLASSIQUE = [
+  // personnages
   'pirate', 'vampire', 'sorcière', 'astronaute', 'fantôme', 'robot', 'squelette', 'zombie', 'momie',
   'ninja', 'chevalier', 'princesse', 'roi', 'reine', 'clown', 'magicien', 'pompier', 'docteur',
   'cuisinier', 'sirène', 'fée', 'géant', 'extraterrestre', 'bonhomme de neige', 'père noël',
   'super-héros', 'cow-boy', 'viking', 'samouraï', 'gladiateur', 'détective', 'policier',
   'facteur', 'jardinier', 'boulanger', 'plombier', 'dentiste', 'coiffeur', 'peintre', 'chanteur',
   'danseuse', 'footballeur', 'boxeur', 'surfeur', 'skieur', 'plongeur', 'bébé', 'grand-mère',
-];
-
-const LIEUX = [
+  // lieux et nature
   'maison', 'château', 'montagne', 'plage', 'île', 'désert', 'volcan', 'forêt', 'cascade', 'grotte',
   'pyramide', 'tour eiffel', 'phare', 'moulin', 'igloo', 'cabane', 'école', 'hôpital', 'cirque',
   'ferme', 'pont', 'soleil', 'lune', 'étoile', 'nuage', 'arc-en-ciel', 'éclair', 'tornade', 'flocon',
   'arbre', 'sapin', 'palmier', 'cactus', 'fleur', 'tournesol', 'rose', 'champ de blé', 'lac',
   'rivière', 'jungle', 'savane', 'banquise', 'aéroport', 'gare', 'stade', 'piscine', 'zoo', 'musée',
   'bibliothèque', 'supermarché', 'cinéma', 'prison', 'église', 'gratte-ciel', 'fête foraine',
-];
-
-const TRANSPORTS = [
+  // transports
   'voiture', 'avion', 'bateau', 'vélo', 'moto', 'train', 'métro', 'hélicoptère', 'sous-marin',
   'tracteur', 'camion', 'ambulance', 'trottinette', 'skateboard', 'fusée', 'montgolfière',
   'parachute', 'soucoupe volante', 'satellite', 'bus', 'taxi', 'voilier', 'kayak', 'tank',
   'camion de pompiers', 'voiture de course', 'téléphérique', 'monocycle', 'roller', 'luge',
-];
-
-const OBJETS = [
+  // objets
   'guitare', 'piano', 'batterie', 'téléphone', 'lunettes', 'chapeau', 'parapluie', 'ballon',
   'raquette', 'tente', 'feu de camp', 'cadeau', 'bougie', 'lampe', 'horloge', 'réveil', 'clé',
   'cadenas', 'porte', 'fenêtre', 'escalier', 'lit', 'canapé', 'chaise', 'baignoire', 'toilettes',
@@ -61,14 +108,12 @@ const OBJETS = [
   'frigo', 'micro-ondes', 'grille-pain', 'casserole', 'fourchette', 'cuillère', 'couteau', 'verre',
   'bouteille', 'boîte aux lettres', 'enveloppe', 'timbre', 'trophée', 'médaille', 'sifflet',
   'boule de bowling', 'haltère', 'violon', 'trompette', 'harpe', 'accordéon', 'tambour',
-];
-
-const CORPS_ACTIONS = [
-  'main', 'pied', 'œil', 'nez', 'bouche', 'oreille', 'cœur', 'cerveau', 'dent', 'moustache', 'barbe',
-  'squelette', 'muscle', 'empreinte', 'tatouage',
-  'dormir', 'courir', 'nager', 'danser', 'pleurer', 'rire', 'sauter', 'éternuer', 'bâiller', 'ronfler',
-  'chanter', 'voler', 'pêcher', 'cuisiner', 'peindre', 'lire', 'écrire', 'jongler', 'grimper',
-  'tomber', 'glisser', 'applaudir', 'chuchoter', 'se cacher', 'faire du yoga',
+  // corps et actions
+  'main', 'pied', 'œil', 'nez', 'bouche', 'oreille', 'cerveau', 'dent', 'moustache', 'barbe',
+  'muscle', 'empreinte', 'tatouage', 'dormir', 'courir', 'nager', 'danser', 'pleurer', 'rire',
+  'sauter', 'éternuer', 'bâiller', 'ronfler', 'chanter', 'voler', 'pêcher', 'cuisiner', 'peindre',
+  'lire', 'écrire', 'jongler', 'grimper', 'tomber', 'glisser', 'applaudir', 'chuchoter', 'se cacher',
+  'faire du yoga',
 ];
 
 const GEEK = [
@@ -101,10 +146,10 @@ const FACILE = [
 
 const DIFFICILE = [
   'nostalgie', 'jalousie', 'liberté', 'gravité', 'écho', 'vertige', 'insomnie', 'déjà-vu',
-  'procrastination', 'coup de foudre', 'heure de pointe', 'effet papillon', 'trou de mémoire',
-  'fin du monde', 'voyage dans le temps', 'mirage', 'reflet', 'ombre chinoise', 'éclipse',
-  'marée haute', 'aurore boréale', 'tremblement de terre', 'avalanche', 'sables mouvants',
-  'chaîne alimentaire', 'photosynthèse', 'évolution', 'système solaire', 'big bang', 'gravitation',
+  'procrastination', 'heure de pointe', 'effet papillon', 'trou de mémoire', 'fin du monde',
+  'voyage dans le temps', 'mirage', 'reflet', 'ombre chinoise', 'éclipse', 'marée haute',
+  'aurore boréale', 'tremblement de terre', 'avalanche', 'sables mouvants', 'chaîne alimentaire',
+  'photosynthèse', 'évolution', 'système solaire', 'big bang', 'gravitation',
   'mettre les pieds dans le plat', 'avoir un poil dans la main', 'tomber dans les pommes',
   'poser un lapin', 'avoir la tête dans les nuages', 'casser les pieds', 'coûter les yeux de la tête',
   'donner sa langue au chat', 'être dans la lune', 'mettre la main à la pâte', 'avoir le cafard',
@@ -113,8 +158,8 @@ const DIFFICILE = [
   'cheval de bataille', 'boule de nerfs', 'pause café', 'entretien d\'embauche', 'déménagement',
   'embouteillage', 'file d\'attente', 'soldes', 'grève', 'manifestation', 'élection', 'tribunal',
   'contrat', 'facture', 'promotion', 'licenciement', 'retraite', 'anniversaire surprise',
-  'mariage', 'divorce', 'héritage', 'jumeaux', 'arbre généalogique', 'chasse au trésor',
-  'escape game', 'karaoké', 'concert', 'feu d\'artifice', 'défilé', 'rallye', 'marathon',
+  'divorce', 'héritage', 'jumeaux', 'arbre généalogique', 'chasse au trésor', 'escape game',
+  'karaoké', 'concert', 'feu d\'artifice', 'défilé', 'rallye', 'marathon',
 ];
 
 // Humour adulte et situations gênantes. Pas de personnes réelles ni de drames.
@@ -123,7 +168,7 @@ const HARDCORE = [
   'slip sale', 'chaussette trouée', 'odeur de pieds', 'rot', 'haleine de chacal', 'string',
   'soutien-gorge', 'préservatif', 'test de grossesse', 'lendemain de soirée', 'cuite', 'shot',
   'beer pong', 'videur', 'boîte de nuit', 'after', 'kebab de 4 h du matin', 'râteau', 'ex toxique',
-  'ghosting', 'friendzone', 'crush', 'cocu', 'suçon', 'walk of shame', 'belle-mère', 'huissier',
+  'ghosting', 'friendzone', 'cocu', 'suçon', 'walk of shame', 'belle-mère', 'huissier',
   'redressement fiscal', 'amende', 'fourrière', 'radar', 'contrôleur', 'fraudeur', 'pipi au lit',
   'chiasse', 'dentier', 'poil de nez', 'verrue', 'selfie raté', 'photo compromettante',
   'enterrement de vie de garçon', 'mariage raté', 'sieste au boulot', 'partiel raté', 'rattrapage',
@@ -133,31 +178,62 @@ const HARDCORE = [
   'vaisselle sale', 'frigo vide', 'fin du mois', 'découvert', 'compte en banque vide', 'lundi matin',
   'réveil qui sonne', 'retard au boulot', 'excuse bidon', 'patron furieux', 'réunion inutile',
   'mail en copie à tout le monde', 'dossier perdu', 'chewing-gum sous la table', 'ronfleur',
-  'voisin bruyant', 'fête des voisins', 'karaoké raté', 'danse ridicule', 'chute en vélo',
-  'gamelle', 'plat brûlé', 'microbe', 'puces', 'poux', 'cafard', 'rat', 'toilettes bouchées',
-  'papier toilette', 'fuite d\'eau', 'panne de courant', 'embrouille', 'bagarre de pigeons',
+  'voisin bruyant', 'karaoké raté', 'danse ridicule', 'chute en vélo', 'gamelle', 'plat brûlé',
+  'puces', 'poux', 'cafard', 'rat', 'toilettes bouchées', 'papier toilette', 'fuite d\'eau',
+  'panne de courant', 'embrouille', 'bagarre de pigeons',
+];
+
+// Gros mots et insultes de tous les jours. Pas d'insultes visant un groupe de personnes.
+const GROS_MOTS = [
+  'merde', 'putain', 'bordel', 'zut', 'mince', 'crotte', 'con', 'connard', 'abruti', 'crétin',
+  'imbécile', 'idiot', 'débile', 'enfoiré', 'boloss', 'cassos', 'relou', 'tocard', 'blaireau',
+  'andouille', 'bouffon', 'nul à chier', 'ta mère', 'doigt d\'honneur', 'bras d\'honneur',
+  'va te faire cuire un œuf', 'ferme ta gueule', 'casse-toi', 'dégage', 'fous le camp',
+  'tête de nœud', 'tête à claques', 'face de rat', 'sale gosse', 'pauvre type', 'gros naze',
+  'raclure', 'ordure', 'vermine', 'pourriture', 'lèche-bottes', 'fayot', 'balance', 'mytho',
+  'radin', 'rapiat', 'pique-assiette', 'pochtron', 'gros dégueulasse', 'péteux', 'chieur',
+  'emmerdeur', 'casse-couilles', 'trou du cul', 'fesses', 'cul', 'pisser', 'chier', 'roter',
+  'cracher', 'bourré comme un coing', 'péter un câble', 'se faire virer', 'prendre une tarte',
+  'mettre une claque', 'coup de boule', 'engueulade', 'gros mot', 'bip de censure',
 ];
 
 const unique = (...lists) => [...new Set(lists.flat())];
 
 export const PACKS = {
-  classique: { label: 'Classique', words: unique(ANIMAUX, NOURRITURE, PERSONNAGES, LIEUX, TRANSPORTS, OBJETS, CORPS_ACTIONS) },
-  facile: { label: 'Facile', words: unique(FACILE) },
-  difficile: { label: 'Difficile', words: unique(DIFFICILE) },
+  classique: { label: 'Classique', words: unique(CLASSIQUE) },
+  animaux: { label: 'Animaux', words: unique(ANIMAUX) },
+  aliments: { label: 'Aliments', words: unique(ALIMENTS) },
+  sucreries: { label: 'Sucreries et desserts', words: unique(SUCRERIES) },
+  amour: { label: 'Amour', words: unique(AMOUR) },
+  personnalites: { label: 'Personnalités connues', words: unique(PERSONNALITES) },
   geek: { label: 'Geek et cyber', words: unique(GEEK) },
-  hardcore: { label: 'Hardcore', words: unique(HARDCORE) },
-  tout: { label: 'Tout mélangé', words: unique(ANIMAUX, NOURRITURE, PERSONNAGES, LIEUX, TRANSPORTS, OBJETS, CORPS_ACTIONS, FACILE, DIFFICILE, GEEK) },
+  facile: { label: 'Facile', words: unique(FACILE) },
+  difficile: { label: 'Expressions et idées', words: unique(DIFFICILE) },
+  hardcore: { label: 'Hardcore', words: unique(HARDCORE), adult: true },
+  grosmots: { label: 'Gros mots', words: unique(GROS_MOTS), adult: true },
 };
 
-// Modes préréglés : un clic règle les mots, le temps, les manches et les indices.
+export const DEFAULT_PACKS = ['classique', 'animaux', 'aliments'];
+
+// Modes préréglés : un clic règle les thèmes, le temps, les manches et les indices.
 export const PRESETS = {
-  normal: { label: 'Normal', desc: 'Mots classiques, 3 manches de 80 secondes, avec indices.', pack: 'classique', rounds: 3, drawTime: 80, hints: true },
-  rapide: { label: 'Rapide', desc: '2 manches de 45 secondes pour une partie éclair.', pack: 'classique', rounds: 2, drawTime: 45, hints: true },
-  facile: { label: 'Facile', desc: 'Des mots simples, 100 secondes pour dessiner.', pack: 'facile', rounds: 3, drawTime: 100, hints: true },
-  geek: { label: 'Geek', desc: 'Informatique, cyber et jeux vidéo.', pack: 'geek', rounds: 3, drawTime: 80, hints: true },
-  expert: { label: 'Expert', desc: 'Expressions et idées abstraites, sans indices.', pack: 'difficile', rounds: 3, drawTime: 100, hints: false },
-  hardcore: { label: 'Hardcore', desc: 'Humour adulte et situations gênantes, 60 secondes, sans indices.', pack: 'hardcore', rounds: 3, drawTime: 60, hints: false },
+  normal: { label: 'Normal', desc: 'Classique, animaux et aliments, 3 manches de 80 secondes, avec indices.', packs: DEFAULT_PACKS, rounds: 3, drawTime: 80, hints: true },
+  rapide: { label: 'Rapide', desc: 'Les mêmes thèmes en 2 manches de 45 secondes.', packs: DEFAULT_PACKS, rounds: 2, drawTime: 45, hints: true },
+  facile: { label: 'Facile', desc: 'Des mots simples, 100 secondes pour dessiner.', packs: ['facile'], rounds: 3, drawTime: 100, hints: true },
+  gourmand: { label: 'Gourmand', desc: 'Aliments, sucreries et desserts.', packs: ['aliments', 'sucreries'], rounds: 3, drawTime: 80, hints: true },
+  love: { label: 'Love', desc: 'Amour, couples et Saint-Valentin.', packs: ['amour'], rounds: 3, drawTime: 80, hints: true },
+  stars: { label: 'Stars', desc: 'Personnalités connues, sans indices.', packs: ['personnalites'], rounds: 3, drawTime: 90, hints: false },
+  geek: { label: 'Geek', desc: 'Informatique, cyber et jeux vidéo.', packs: ['geek'], rounds: 3, drawTime: 80, hints: true },
+  expert: { label: 'Expert', desc: 'Expressions et idées abstraites, sans indices.', packs: ['difficile'], rounds: 3, drawTime: 100, hints: false },
+  soiree: { label: 'Soirée', desc: 'Tout le jeu sauf les thèmes +18 : un peu de tout.', packs: ['classique', 'animaux', 'aliments', 'sucreries', 'amour', 'personnalites', 'geek', 'difficile'], rounds: 3, drawTime: 80, hints: true },
+  hardcore: { label: 'Hardcore (+18)', desc: 'Situations gênantes et gros mots, 60 secondes, sans indices.', packs: ['hardcore', 'grosmots'], rounds: 3, drawTime: 60, hints: false },
 };
 
-export const PACK_LIST = Object.entries(PACKS).map(([id, p]) => ({ id, label: p.label, count: p.words.length }));
+export const PACK_LIST = Object.entries(PACKS).map(([id, p]) => ({ id, label: p.label, count: p.words.length, adult: Boolean(p.adult) }));
 export const PRESET_LIST = Object.entries(PRESETS).map(([id, p]) => ({ id, label: p.label, desc: p.desc }));
+
+// Garde uniquement des thèmes qui existent, sans doublon ; jamais vide.
+export function cleanPacks(list) {
+  const ids = [...new Set((Array.isArray(list) ? list : [list]).filter((id) => typeof id === 'string' && Object.hasOwn(PACKS, id)))];
+  return ids.length ? ids : [...DEFAULT_PACKS];
+}

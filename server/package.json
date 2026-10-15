@@ -1,6 +1,6 @@
 {
   "name": "gribouille-server",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "Serveur temps réel du jeu Gribouille (Node.js + Socket.io)",
   "private": true,
   "type": "module",

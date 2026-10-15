@@ -56,7 +56,7 @@ L'état de chaque salon vit en mémoire dans le serveur (`Room` dans `game.js`).
 
 ### Mots et modes de jeu
 
-Les mots sont rangés en paquets dans `server/src/words.js` : classique, facile, difficile, geek, hardcore et tout mélangé (574 mots). Un **mode préréglé** (normal, rapide, facile, geek, expert, hardcore) règle d'un coup le paquet, le nombre de manches, le temps et les indices. Si l'hôte change ensuite un de ces réglages à la main, le mode passe en « Perso ». Les mots perso de l'hôte s'ajoutent au paquet choisi, ou le remplacent avec l'option « uniquement nos mots ».
+Les mots sont rangés en 11 thèmes dans `server/src/words.js` (999 mots différents). L'hôte coche un ou plusieurs thèmes : les mots de chaque tour sont tirés dans l'ensemble des thèmes cochés, sans répétition tant que la réserve n'est pas épuisée. Les thèmes réservés aux adultes portent l'indication `adult` et sont signalés « +18 » dans le salon. Un **mode préréglé** (normal, rapide, facile, gourmand, love, stars, geek, expert, soirée, hardcore) règle d'un coup les thèmes, le nombre de manches, le temps et les indices. Si l'hôte change ensuite un de ces réglages à la main, le mode passe en « Perso ». Les mots perso de l'hôte s'ajoutent aux thèmes cochés, ou les remplacent avec l'option « uniquement nos mots ».
 
 ## Ops de dessin
 

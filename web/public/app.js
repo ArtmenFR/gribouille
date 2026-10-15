@@ -290,7 +290,12 @@
 
   const sendSettings = (patch) => socket.emit('room:settings', patch);
   $('#set-preset').addEventListener('change', (e) => { if (e.target.value !== 'perso') sendSettings({ preset: e.target.value }); });
-  $('#set-pack').addEventListener('change', (e) => sendSettings({ pack: e.target.value }));
+  // Thèmes cochables : on envoie la liste complète des thèmes cochés
+  $('#set-packs').addEventListener('change', () => {
+    const packs = [...document.querySelectorAll('#set-packs input:checked')].map((i) => i.value);
+    if (!packs.length) { toast('Garde au moins un thème coché.', { error: true }); render(); return; }
+    sendSettings({ packs });
+  });
   $('#set-rounds').addEventListener('change', (e) => sendSettings({ rounds: Number(e.target.value) }));
   $('#set-time').addEventListener('change', (e) => sendSettings({ drawTime: Number(e.target.value) }));
   $('#set-max').addEventListener('change', (e) => sendSettings({ maxPlayers: Number(e.target.value) }));
@@ -402,14 +407,31 @@
       const presetSel = $('#set-preset');
       if (presetSel.options.length !== S.catalog.presets.length + 1) {
         opt('#set-preset', [...S.catalog.presets.map((p) => p.id), 'perso'], (id) => (id === 'perso' ? 'Perso' : S.catalog.presets.find((p) => p.id === id).label));
-        opt('#set-pack', S.catalog.packs.map((p) => p.id), (id) => { const pk = S.catalog.packs.find((p) => p.id === id); return `${pk.label} (${pk.count} mots)`; });
+        $('#set-packs').replaceChildren(...S.catalog.packs.map((pk) => {
+          const lab = el('label', pk.adult ? 'pack adult' : 'pack');
+          const box = el('input');
+          box.type = 'checkbox';
+          box.value = pk.id;
+          const txt = el('span', 'pack-name', pk.label);
+          lab.append(box, txt, el('span', 'pack-count', String(pk.count)));
+          if (pk.adult) lab.append(el('span', 'pack-adult', '+18'));
+          return lab;
+        }));
       }
       presetSel.value = st.preset;
-      $('#set-pack').value = st.pack;
+      const chosen = new Set(st.packs);
+      let total = 0;
+      document.querySelectorAll('#set-packs input').forEach((box) => {
+        box.checked = chosen.has(box.value);
+        box.closest('.pack').classList.toggle('on', box.checked);
+        if (box.checked) total += S.catalog.packs.find((p) => p.id === box.value)?.count ?? 0;
+      });
+      $('#packs-count').textContent = `${total} mots, sans compter les vôtres`;
       const pr = S.catalog.presets.find((p) => p.id === st.preset);
       $('#preset-desc').textContent = pr ? pr.desc : 'Réglages personnalisés.';
     }
-    for (const id of ['#set-preset', '#set-pack', '#set-rounds', '#set-time', '#set-max', '#set-hints', '#set-custom-only', '#set-words']) $(id).disabled = !isHost;
+    document.querySelectorAll('#set-packs input').forEach((box) => { box.disabled = !isHost; });
+    for (const id of ['#set-preset', '#set-rounds', '#set-time', '#set-max', '#set-hints', '#set-custom-only', '#set-words']) $(id).disabled = !isHost;
     setSelect('#set-rounds', st.rounds);
     setSelect('#set-time', st.drawTime);
     setSelect('#set-max', st.maxPlayers);

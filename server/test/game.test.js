@@ -200,15 +200,21 @@ test('les modes préréglés règlent tout, un réglage manuel passe en Perso', 
   await call(b, 'room:join', { name: 'Ami', code: r.code, token: 'v'.repeat(32) });
   await until(() => last(a)?.players.length === 2);
   assert.ok(last(a).catalog.presets.some((p) => p.id === 'hardcore'));
-  assert.ok(last(a).catalog.packs.find((p) => p.id === 'classique').count > 300);
+  assert.ok(last(a).catalog.packs.reduce((n, p) => n + p.count, 0) > 700, 'banque de mots fournie');
+  assert.ok(last(a).catalog.packs.find((p) => p.id === 'grosmots').adult, 'thème +18 signalé');
   a.emit('room:settings', { preset: 'hardcore' });
   await until(() => last(b).settings.preset === 'hardcore');
-  assert.equal(last(b).settings.pack, 'hardcore');
+  assert.deepEqual(last(b).settings.packs, ['hardcore', 'grosmots']);
   assert.equal(last(b).settings.hints, false);
   assert.equal(last(b).settings.drawTime, 60);
   a.emit('room:settings', { drawTime: 120 });
   await until(() => last(b).settings.drawTime === 120);
   assert.equal(last(b).settings.preset, 'perso');
+  // thèmes combinés, valeurs inconnues ignorées
+  a.emit('room:settings', { packs: ['sucreries', 'amour', 'nexistepas', 'amour'] });
+  await until(() => last(b).settings.packs.join() === 'sucreries,amour');
+  a.emit('room:settings', { packs: [] });
+  await until(() => last(b).settings.packs.join() === 'classique,animaux,aliments');
   b.emit('room:settings', { preset: 'rapide' });
   await wait(150);
   assert.equal(last(a).settings.preset, 'perso', 'seul l\'hôte change les règles');

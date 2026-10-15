@@ -35,3 +35,17 @@ test('les pages chargent les scripts avec le numéro de version (anti-cache)', a
     }
   }
 });
+
+test('les thèmes de mots sont propres', async () => {
+  const { PACKS, PRESETS, cleanPacks } = await import('../src/words.js');
+  for (const [id, pack] of Object.entries(PACKS)) {
+    assert.ok(pack.words.length >= 40, `${id} contient assez de mots`);
+    for (const w of pack.words) assert.ok(w.trim() === w && w.length >= 2 && w.length <= 45, `${id} : « ${w} »`);
+  }
+  for (const [id, preset] of Object.entries(PRESETS)) {
+    assert.deepEqual(cleanPacks(preset.packs), preset.packs, `le mode ${id} n'utilise que des thèmes existants`);
+  }
+  const banned = ['hitler', 'ben laden', 'epstein'];
+  const all = Object.values(PACKS).flatMap((p) => p.words.map((w) => w.toLowerCase()));
+  for (const b of banned) assert.ok(!all.some((w) => w.includes(b)), `${b} absent de la banque`);
+});

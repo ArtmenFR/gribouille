@@ -18,7 +18,7 @@ Un joueur crée une partie et reçoit un code à 4 lettres, ou un lien à partag
 - **Réponses proches gardées privées** : un « tu chauffes » n'est visible que par son auteur, pour ne pas souffler la réponse aux autres.
 - **Chat secret** entre le dessinateur et ceux qui ont déjà trouvé.
 - **Réponses tolérantes** : majuscules, accents, tirets et même « c'est un chat ? » sont acceptés.
-- **Modes de jeu et paquets de mots** : normal, rapide, facile, geek, expert, hardcore, 574 mots au total.
+- **Thèmes de mots combinables** : classique, animaux, aliments, sucreries, amour, personnalités connues, geek, expressions, et deux thèmes +18. 999 mots au total, et des modes préréglés (Normal, Rapide, Gourmand, Love, Stars, Soirée, Hardcore…).
 - **Mots perso cachés aux joueurs** : seul l'hôte les voit, avec l'option « uniquement nos mots ».
 - **Vote pour le dessin** : des points bonus pour le dessinateur, et une récompense pour le meilleur dessin de la partie.
 - **Mot masquable** pour le dessinateur, contre les regards quand on joue dans la même pièce.
@@ -124,7 +124,7 @@ gribouille/
 cd server && npm ci && npm test
 ```
 
-Les 10 tests lancent un vrai serveur et de vrais clients Socket.io qui jouent : création, code, choix du mot, dessin, devinettes, chat secret, reconnexion, changement de pseudo, exclusion, modes de jeu, votes et meilleur dessin. Ils vérifient aussi que le mot ne fuite jamais chez ceux qui doivent le deviner. La CI les relance à chaque push, construit les images et vérifie que la stack démarre.
+Les 12 tests lancent un vrai serveur et de vrais clients Socket.io qui jouent : création, code, choix du mot, dessin, devinettes, chat secret, reconnexion, changement de pseudo, exclusion, modes de jeu, votes et meilleur dessin. Ils vérifient aussi que le mot ne fuite jamais chez ceux qui doivent le deviner. La CI les relance à chaque push, construit les images et vérifie que la stack démarre.
 
 ## Développer sans Docker
 
