@@ -192,3 +192,57 @@ test('les pseudos sont nettoyés et dédoublonnés', async () => {
   assert.deepEqual(names, ['<b>Max</b>', '<b>Max</b>2']);
   assert.ok((await call(a, 'room:create', { name: '   ' })).error);
 });
+
+test('les modes préréglés règlent tout, un réglage manuel passe en Perso', async () => {
+  const a = await connect();
+  const b = await connect();
+  const r = await call(a, 'room:create', { name: 'Hôte', token: 'u'.repeat(32) });
+  await call(b, 'room:join', { name: 'Ami', code: r.code, token: 'v'.repeat(32) });
+  await until(() => last(a)?.players.length === 2);
+  assert.ok(last(a).catalog.presets.some((p) => p.id === 'hardcore'));
+  assert.ok(last(a).catalog.packs.find((p) => p.id === 'classique').count > 300);
+  a.emit('room:settings', { preset: 'hardcore' });
+  await until(() => last(b).settings.preset === 'hardcore');
+  assert.equal(last(b).settings.pack, 'hardcore');
+  assert.equal(last(b).settings.hints, false);
+  assert.equal(last(b).settings.drawTime, 60);
+  a.emit('room:settings', { drawTime: 120 });
+  await until(() => last(b).settings.drawTime === 120);
+  assert.equal(last(b).settings.preset, 'perso');
+  b.emit('room:settings', { preset: 'rapide' });
+  await wait(150);
+  assert.equal(last(a).settings.preset, 'perso', 'seul l\'hôte change les règles');
+});
+
+test('les votes rapportent des points au dessinateur et désignent le meilleur dessin', async () => {
+  const a = await connect();
+  const b = await connect();
+  const c = await connect();
+  const r = await call(a, 'room:create', { name: 'A', token: 'w'.repeat(32) });
+  await call(b, 'room:join', { name: 'B', code: r.code, token: 'x'.repeat(32) });
+  await call(c, 'room:join', { name: 'C', code: r.code, token: 'y'.repeat(32) });
+  await until(() => last(a)?.players.length === 3);
+  a.emit('room:settings', { rounds: 1, drawTime: 30 });
+  await until(() => last(a).settings.rounds === 1);
+  a.emit('game:start');
+  const all = [a, b, c];
+  await until(() => all.every((x) => last(x)?.state === 'choosing'));
+  const drawer = all.find((x) => last(x).drawerId === last(x).me);
+  const voters = all.filter((x) => x !== drawer);
+  drawer.emit('word:choose', 0);
+  await until(() => last(drawer).state === 'drawing');
+  const word = last(drawer).word;
+  // le dessinateur ne peut pas voter pour lui-même
+  drawer.emit('react', 1);
+  voters.forEach((v) => v.emit('react', 1));
+  await wait(100);
+  for (const v of voters) v.emit('chat', word);
+  await until(() => last(a).state === 'turnEnd');
+  assert.deepEqual(last(a).reactions, { up: 2, down: 0 });
+  const before = last(a).players.find((p) => p.id === last(drawer).me).score;
+  // on accélère la fin du tour
+  await until(() => last(a).state !== 'turnEnd', 12000);
+  const after = (last(a).podium ?? last(a).players).find((p) => p.id === last(drawer).me).score;
+  assert.ok(after >= before + 50, `bonus de vote attendu (${before} -> ${after})`);
+  assert.ok(a.chats.some((m) => /grâce à vos votes/.test(m.text)));
+});

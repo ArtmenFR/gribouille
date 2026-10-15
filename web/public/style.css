@@ -388,7 +388,22 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; cursor: defaul
 .hint .blank { border-bottom: 3px solid var(--chalk-dim); border-radius: 2px; height: 1.1em; }
 .hint .gap { width: .5em; }
 .hint .count { font-size: var(--fs-sm); font-weight: 400; color: var(--chalk-dim); margin-left: var(--s2); align-self: center; }
-.hint .word { color: var(--yellow); }
+.hint .word { color: var(--yellow); transition: filter var(--t-med); }
+.hint-row { display: flex; align-items: center; justify-content: center; gap: var(--s2); }
+.hint .word.masked { filter: blur(9px); user-select: none; cursor: pointer; }
+.hint .word.masked.peeking { filter: none; }
+.peek {
+  width: 34px; height: 34px; border-radius: 50%; border: none; display: grid; place-items: center;
+  background: var(--slate-700); color: var(--chalk); padding: 0; transition: background var(--t-fast);
+}
+.peek .icon { width: 18px; height: 18px; }
+.peek:hover { background: var(--slate-600); }
+.preset-desc { margin-top: calc(-1 * var(--s2)); }
+.best-drawing { display: flex; align-items: center; gap: var(--s2); color: var(--yellow); font-weight: 800; }
+.best-drawing .icon { width: 20px; height: 20px; }
+.thumb.best img, .thumb.best canvas { box-shadow: 0 0 0 3px var(--yellow), 0 8px 16px -10px rgba(0, 0, 0, .5); }
+.thumb .best-tag { color: var(--yellow-d); display: inline-flex; }
+.thumb .best-tag .icon { width: 16px; height: 16px; }
 .timer { justify-self: end; width: 60px; height: 60px; position: relative; display: grid; place-items: center; }
 .timer svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .timer path { fill: none; stroke-width: 4.5; stroke-linecap: round; }
@@ -488,7 +503,7 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; cursor: defaul
 .podium .p2 .block { height: 84px; background: var(--chalk); animation-delay: .3s; }
 .podium .p3 .block { height: 58px; background: var(--coral); animation-delay: .1s; }
 @keyframes grow { from { transform: scaleY(0); } }
-.over-gallery { display: flex; gap: var(--s2); overflow-x: auto; max-width: 100%; padding-bottom: var(--s1); }
+.over-gallery { flex: none; display: flex; gap: var(--s2); overflow-x: auto; max-width: 100%; padding-bottom: var(--s1); }
 .over-gallery img, .over-gallery canvas { height: 60px; aspect-ratio: 4 / 3; border-radius: 6px; background: #fff; flex: none; animation: row-in var(--t-med) var(--ease-spring) both; }
 .over-actions { display: flex; gap: var(--s2); }
 

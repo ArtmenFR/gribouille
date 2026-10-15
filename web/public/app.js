@@ -119,7 +119,9 @@
   let currentScreen = null;
   const shownScores = new Map();   // pour animer les scores
   const knownGuessed = new Set();  // pour faire clignoter ceux qui viennent de trouver
-  let gallery = [];               // dessins de la partie (en mémoire, pour la session)
+  let gallery = [];
+  let bestDrawing = null;          // meilleur dessin de la dernière partie
+  let hideWord = store.get('gb_hideword', false);               // dessins de la partie (en mémoire, pour la session)
 
   const socket = io({ transports: ['websocket', 'polling'] });
 
@@ -287,6 +289,8 @@
   opt('#set-max', [2, 3, 4, 5, 6, 8, 10, 12, 16], (v) => `${v}`);
 
   const sendSettings = (patch) => socket.emit('room:settings', patch);
+  $('#set-preset').addEventListener('change', (e) => { if (e.target.value !== 'perso') sendSettings({ preset: e.target.value }); });
+  $('#set-pack').addEventListener('change', (e) => sendSettings({ pack: e.target.value }));
   $('#set-rounds').addEventListener('change', (e) => sendSettings({ rounds: Number(e.target.value) }));
   $('#set-time').addEventListener('change', (e) => sendSettings({ drawTime: Number(e.target.value) }));
   $('#set-max').addEventListener('change', (e) => sendSettings({ maxPlayers: Number(e.target.value) }));
@@ -394,7 +398,18 @@
     }
 
     const st = S.settings;
-    for (const id of ['#set-rounds', '#set-time', '#set-max', '#set-hints', '#set-custom-only', '#set-words']) $(id).disabled = !isHost;
+    if (S.catalog) {
+      const presetSel = $('#set-preset');
+      if (presetSel.options.length !== S.catalog.presets.length + 1) {
+        opt('#set-preset', [...S.catalog.presets.map((p) => p.id), 'perso'], (id) => (id === 'perso' ? 'Perso' : S.catalog.presets.find((p) => p.id === id).label));
+        opt('#set-pack', S.catalog.packs.map((p) => p.id), (id) => { const pk = S.catalog.packs.find((p) => p.id === id); return `${pk.label} (${pk.count} mots)`; });
+      }
+      presetSel.value = st.preset;
+      $('#set-pack').value = st.pack;
+      const pr = S.catalog.presets.find((p) => p.id === st.preset);
+      $('#preset-desc').textContent = pr ? pr.desc : 'Réglages personnalisés.';
+    }
+    for (const id of ['#set-preset', '#set-pack', '#set-rounds', '#set-time', '#set-max', '#set-hints', '#set-custom-only', '#set-words']) $(id).disabled = !isHost;
     setSelect('#set-rounds', st.rounds);
     setSelect('#set-time', st.drawTime);
     setSelect('#set-max', st.maxPlayers);
@@ -465,11 +480,14 @@
     $('#lobby-gallery').hidden = !show;
     if (!show) return;
     $('#gallery-lobby').replaceChildren(...gallery.map((g, i) => {
-      const f = el('figure', 'thumb');
+      const isBest = bestDrawing && g.word === bestDrawing.word && g.by === bestDrawing.by;
+      const f = el('figure', isBest ? 'thumb best' : 'thumb');
       f.style.animationDelay = `${i * 40}ms`;
       const img = thumbCanvas(g);
       const cap = el('figcaption');
-      cap.append(el('span', 'w', g.word ?? '?'), el('span', 'by', g.by));
+      cap.append(el('span', 'w', g.word ?? '?'));
+      if (isBest) { const t = iconEl('star', 'best-tag'); t.title = 'Meilleur dessin'; cap.append(t); }
+      cap.append(el('span', 'by', g.by));
       f.append(img, cap);
       return f;
     }));
@@ -480,10 +498,25 @@
   const canDraw = () => S && S.state === 'drawing' && isDrawer();
   const meP = () => S?.players.find((p) => p.id === S.me);
 
+  const peek = $('#btn-peek');
+  function renderPeek() {
+    peek.innerHTML = IC.svg(hideWord ? 'eye' : 'eyeOff');
+    peek.title = hideWord ? 'Afficher mon mot' : 'Masquer mon mot (contre les regards)';
+    peek.setAttribute('aria-label', peek.title);
+  }
+  peek.addEventListener('click', () => {
+    hideWord = !hideWord;
+    store.set('gb_hideword', hideWord);
+    renderPeek();
+    if (S) renderHint();
+  });
+  renderPeek();
+
   function renderHint() {
     const box = $('#g-hint');
     const label = $('#g-hint-label');
     box.replaceChildren();
+    peek.hidden = true;
     if (S.state === 'choosing') {
       label.textContent = '';
       box.append(el('span', null, isDrawer() ? 'Choisis ton mot' : 'Choix du mot'));
@@ -492,8 +525,22 @@
     }
     if (S.state !== 'drawing' && S.state !== 'turnEnd') { label.textContent = ''; lastHint = ''; return; }
     if (S.word) {
+      const private_ = S.state === 'drawing';
       label.textContent = isDrawer() ? 'Ton mot à dessiner' : S.state === 'turnEnd' ? 'Le mot était' : 'Bien trouvé';
-      box.append(el('span', 'word', S.word));
+      const w = el('span', 'word', S.word);
+      if (private_ && hideWord) {
+        w.classList.add('masked');
+        w.title = 'Reste appuyé pour voir le mot';
+        const show = () => w.classList.add('peeking');
+        const hide = () => w.classList.remove('peeking');
+        w.addEventListener('pointerdown', show);
+        w.addEventListener('pointerup', hide);
+        w.addEventListener('pointerleave', hide);
+        w.addEventListener('pointercancel', hide);
+        label.textContent += ' (masqué)';
+      }
+      box.append(w);
+      peek.hidden = !private_;
       lastHint = '';
       return;
     }
@@ -607,6 +654,12 @@
         pod.append(step);
       }
       ov.append(pod);
+      if (S.best) {
+        bestDrawing = S.best;
+        const b = el('div', 'best-drawing');
+        b.append(iconEl('star'), el('span', null, `Meilleur dessin : « ${S.best.word} » par ${S.best.by} (+${S.best.bonus})`));
+        ov.append(b);
+      }
       const thisGame = gallery.slice(-Math.max(0, S.round * (S.podium.length || 1)));
       if (thisGame.length) {
         const g = el('div', 'over-gallery');
@@ -654,7 +707,8 @@
     renderOverlay();
     const drawingNow = canDraw();
     $('#toolbar').hidden = !drawingNow;
-    $('#react').hidden = S.state !== 'drawing';
+    $('#react').hidden = S.state !== 'drawing' && S.state !== 'turnEnd';
+    $('#react-label').textContent = isDrawer() ? 'Votes pour ton dessin' : 'Vote pour ce dessin';
     $('#r-up').disabled = $('#r-down').disabled = isDrawer();
     renderReactions();
     canvas.classList.toggle('can-draw', drawingNow && tool !== 'fill');
@@ -681,6 +735,7 @@
       if (S.state === 'gameOver') sfx.win();
       if (S.state === 'choosing' && (lastState === 'lobby' || lastState === 'gameOver' || lastState === null) && S.round === 1) {
         gallery = [];
+        bestDrawing = null;
         shownScores.clear();
       }
       lastState = S.state;
@@ -996,5 +1051,6 @@
   showScreen('home');
   wipe();
   loadHof();
+  fetch('/api/health').then((r) => r.json()).then((d) => { if (d.version) $('#app-version').textContent = `Version ${d.version}`; }).catch(() => {});
   if (!currentCode && !profile.name) $('#name').focus();
 })();

@@ -1,13 +1,15 @@
 // Moteur de jeu : salons à code, tours, mots, indices, scores.
 // Règle d'or anti-triche : le mot n'est JAMAIS envoyé à un joueur qui doit le deviner.
 import crypto from 'node:crypto';
-import { WORDS_FR } from './words.js';
+import { PACKS, PRESETS, PACK_LIST, PRESET_LIST } from './words.js';
 import { recordGame } from './store.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const MAX_ROOMS = 300;
 const CHOOSE_MS = 15_000;
-const TURN_END_MS = 6_000;
+const TURN_END_MS = 8_000; // laisse le temps de voter pour le dessin
+const VOTE_POINTS = 25;     // par vote positif net, pour le dessinateur
+const BEST_DRAWING_BONUS = 150;
 const GAME_OVER_MS = 15_000;
 const GRACE_MS = 60_000; // délai pour revenir après une déco sans perdre ses points
 const EMPTY_ROOM_MS = 120_000;
@@ -114,7 +116,10 @@ class Room {
     this.players = new Map();
     this.hostId = null;
     this.kicked = new Set();
-    this.settings = { rounds: 3, drawTime: 80, maxPlayers: 10, hints: true, customOnly: false, customWords: [] };
+    this.settings = { preset: 'normal', pack: 'classique', rounds: 3, drawTime: 80, maxPlayers: 10, hints: true, customOnly: false, customWords: [] };
+    this.turnLog = [];
+    this.best = null;
+    this.voteSettled = 0;
     this.emptySince = null;
     this.turnId = 0;
     this.podium = null;
@@ -215,6 +220,8 @@ class Room {
       reactions: this.reactionCounts(),
       myReaction: this.reactions.get(p.id) ?? 0,
       podium: this.state === 'gameOver' ? this.podium : null,
+      best: this.state === 'gameOver' ? this.best : null,
+      catalog: this.state === 'lobby' || this.state === 'gameOver' ? { packs: PACK_LIST, presets: PRESET_LIST } : null,
     };
   }
 
@@ -340,10 +347,20 @@ class Room {
   updateSettings(by, s) {
     if (by.id !== this.hostId || (this.state !== 'lobby' && this.state !== 'gameOver')) return;
     const st = this.settings;
-    if ('rounds' in s) st.rounds = clampInt(s.rounds, 1, 10, st.rounds);
-    if ('drawTime' in s) st.drawTime = clampInt(s.drawTime, 30, 240, st.drawTime);
+    if (typeof s.preset === 'string' && Object.hasOwn(PRESETS, s.preset)) {
+      // Un mode préréglé règle tout d'un coup
+      const pr = PRESETS[s.preset];
+      Object.assign(st, { preset: s.preset, pack: pr.pack, rounds: pr.rounds, drawTime: pr.drawTime, hints: pr.hints });
+    } else {
+      // Un réglage changé à la main fait passer en mode « Perso »
+      const before = `${st.pack}|${st.rounds}|${st.drawTime}|${st.hints}`;
+      if (typeof s.pack === 'string' && Object.hasOwn(PACKS, s.pack)) st.pack = s.pack;
+      if ('rounds' in s) st.rounds = clampInt(s.rounds, 1, 10, st.rounds);
+      if ('drawTime' in s) st.drawTime = clampInt(s.drawTime, 30, 240, st.drawTime);
+      if (typeof s.hints === 'boolean') st.hints = s.hints;
+      if (`${st.pack}|${st.rounds}|${st.drawTime}|${st.hints}` !== before) st.preset = 'perso';
+    }
     if ('maxPlayers' in s) st.maxPlayers = clampInt(s.maxPlayers, 2, 16, st.maxPlayers);
-    if (typeof s.hints === 'boolean') st.hints = s.hints;
     if (typeof s.customOnly === 'boolean') st.customOnly = s.customOnly;
     if ('customWords' in s) {
       const raw = Array.isArray(s.customWords) ? s.customWords.join(',') : String(s.customWords ?? '');
@@ -365,12 +382,15 @@ class Room {
     }
     this.toLobby();
     this.podium = null;
+    this.turnLog = [];
+    this.best = null;
     this.sys('La partie commence !', 'round');
     this.nextTurn();
     return null;
   }
 
   nextTurn() {
+    this.settleVotes();
     this.turnIndex++;
     for (;;) {
       if (this.turnIndex >= this.order.length) {
@@ -399,7 +419,8 @@ class Room {
 
   pickWords(n) {
     const custom = this.settings.customWords;
-    const pool = this.settings.customOnly && custom.length >= n ? custom : [...WORDS_FR, ...custom, ...custom];
+    const base = (PACKS[this.settings.pack] ?? PACKS.classique).words;
+    const pool = this.settings.customOnly && custom.length >= n ? custom : [...base, ...custom, ...custom];
     let avail = [...new Set(pool.filter((w) => !this.usedWords.has(w)))];
     if (avail.length < n) {
       this.usedWords.clear();
@@ -449,7 +470,30 @@ class Room {
     this.broadcast();
   }
 
+  // Votes sur le dessin du tour : des points bonus pour le dessinateur
+  settleVotes() {
+    if (this.state !== 'turnEnd' || !this.word || this.voteSettled === this.turnId) return;
+    this.voteSettled = this.turnId;
+    const { up, down } = this.reactionCounts();
+    const drawer = this.players.get(this.drawerId);
+    const bonus = Math.max(0, up - down) * VOTE_POINTS;
+    if (drawer && bonus) {
+      drawer.score += bonus;
+      this.sys(`${drawer.name} gagne +${bonus} grâce à vos votes`, 'success');
+    }
+    this.turnLog.push({ drawerId: this.drawerId, by: drawer?.name ?? '', word: this.word, up, down });
+  }
+
   gameOver() {
+    // Meilleur dessin de la partie : le plus de votes positifs nets
+    const top = this.turnLog.filter((t) => t.up > 0).sort((a, b) => (b.up - b.down) - (a.up - a.down) || b.up - a.up)[0];
+    this.best = null;
+    if (top) {
+      const artist = this.players.get(top.drawerId);
+      if (artist) artist.score += BEST_DRAWING_BONUS;
+      this.best = { word: top.word, by: top.by, up: top.up, bonus: BEST_DRAWING_BONUS };
+      this.sys(`Meilleur dessin : « ${top.word} » par ${top.by} (+${BEST_DRAWING_BONUS})`, 'win');
+    }
     this.state = 'gameOver';
     this.turnId++; // efface le dernier dessin chez tout le monde
     this.drawerId = null;
@@ -537,7 +581,7 @@ class Room {
   }
 
   react(p, v) {
-    if (this.state !== 'drawing' || p.id === this.drawerId) return;
+    if ((this.state !== 'drawing' && this.state !== 'turnEnd') || p.id === this.drawerId) return;
     this.reactions.set(p.id, v > 0 ? 1 : -1);
     this.io.to(this.code).emit('reactions', this.reactionCounts());
   }

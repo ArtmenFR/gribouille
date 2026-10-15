@@ -3,14 +3,17 @@ import http from 'node:http';
 import path from 'node:path';
 import { Server } from 'socket.io';
 import { attach, stats } from './game.js';
+import { readFileSync } from 'node:fs';
 import { initStore, getLeaderboard } from './store.js';
+
+const { version: VERSION } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 const PORT = Number(process.env.PORT) || 3000;
 
 const app = express();
 app.disable('x-powered-by');
 
-app.get('/api/health', (_req, res) => res.json({ ok: true, ...stats() }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, version: VERSION, ...stats() }));
 
 app.get('/api/leaderboard', async (_req, res) => {
   try {
@@ -35,7 +38,7 @@ const io = new Server(server, {
 initStore(process.env.REDIS_URL);
 attach(io);
 
-server.listen(PORT, () => console.log(`Gribouille prêt sur le port ${PORT}`));
+server.listen(PORT, () => console.log(`Gribouille ${VERSION} prêt sur le port ${PORT}`));
 
 const shutdown = () => {
   io.close();

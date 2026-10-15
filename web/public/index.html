@@ -96,6 +96,8 @@
       <a href="charte.html">Charte graphique</a>
       <span aria-hidden="true">/</span>
       <span>Projet de conteneurisation, ESGI Reims</span>
+      <span aria-hidden="true">/</span>
+      <span id="app-version"></span>
     </footer>
   </section>
 
@@ -133,6 +135,9 @@
       <section class="sheet">
         <h2 class="sheet-title">Règles de la partie</h2>
         <div class="settings">
+          <label class="field wide"><span>Mode de jeu</span><select id="set-preset"></select></label>
+          <p class="note wide preset-desc" id="preset-desc"></p>
+          <label class="field wide"><span>Mots</span><select id="set-pack"></select></label>
           <label class="field"><span>Manches</span><select id="set-rounds"></select></label>
           <label class="field"><span>Temps par dessin</span><select id="set-time"></select></label>
           <label class="field"><span>Joueurs max</span><select id="set-max"></select></label>
@@ -162,7 +167,10 @@
         <div class="round" id="g-round"></div>
         <div class="hint-wrap">
           <div class="hint-label" id="g-hint-label"></div>
-          <div class="hint" id="g-hint"></div>
+          <div class="hint-row">
+            <div class="hint" id="g-hint"></div>
+            <button type="button" class="peek" id="btn-peek" hidden></button>
+          </div>
         </div>
         <div class="timer" id="g-timer">
           <svg viewBox="0 0 60 60" aria-hidden="true">
@@ -198,7 +206,7 @@
             </div>
           </div>
           <div class="react sheet" id="react" hidden>
-            <span>Ce dessin</span>
+            <span id="react-label">Vote pour ce dessin</span>
             <button type="button" class="react-btn" id="r-up" aria-label="J'aime"><span data-icon="thumbUp"></span><span id="r-up-n">0</span></button>
             <button type="button" class="react-btn" id="r-down" aria-label="J'aime pas"><span data-icon="thumbDown"></span><span id="r-down-n">0</span></button>
           </div>
