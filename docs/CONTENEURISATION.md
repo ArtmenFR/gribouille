@@ -154,7 +154,11 @@ sleep 6 && docker compose ps server   # il a été relancé tout seul
 docker compose logs -f server
 ```
 
-## 5. Limites et pistes d'amélioration
+## 5. Incidents réels et leur résolution
+
+Plusieurs problèmes liés à la conteneurisation sont apparus en conditions réelles : conflit entre les paquets Docker de Fedora et ceux de Docker, erreur 403 due aux droits des fichiers copiés dans l'image (`umask`), priorité des règles `location` de nginx qui interceptait le client Socket.io, étiquettes SELinux sur les volumes de développement. Leur diagnostic et leur correction sont détaillés dans la partie 8 du [rapport](RAPPORT.md).
+
+## 6. Limites et pistes d'amélioration
 
 - **Mise à l'échelle horizontale.** Les parties vivent en mémoire dans un seul conteneur `server`. Pour en lancer plusieurs (`--scale server=3`), il faudrait l'adaptateur Redis de Socket.io et déplacer l'état des salons dans Redis.
 - **HTTPS.** En production, ajouter Traefik ou Caddy devant `web` pour obtenir un certificat Let's Encrypt automatiquement.

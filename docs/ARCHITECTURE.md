@@ -16,7 +16,7 @@ Le réseau `back` est déclaré `internal: true` : Redis n'a aucune route vers l
 
 ```
 lobby ──(hôte lance)──► choosing ──(mot choisi / 15 s)──► drawing ──(temps écoulé / tous ont trouvé)──► turnEnd
-                            ▲                                                                            │ 6 s
+                            ▲                                                                            │ 8 s (votes)
                             └──────────────────────────── tour suivant ◄───────────────────────────────┘
                                                               │ plus de tours
                                                               ▼
@@ -34,14 +34,15 @@ L'état de chaque salon vit en mémoire dans le serveur (`Room` dans `game.js`).
 | `room:create` | `{ name, avatar, token }` + callback | tous |
 | `room:join` | `{ code, name, avatar, token }` + callback | tous |
 | `room:leave` | | joueur |
-| `room:settings` | `{ rounds?, drawTime?, maxPlayers?, hints?, customOnly?, customWords? }` | hôte, au salon |
+| `room:settings` | `{ preset?, pack?, rounds?, drawTime?, maxPlayers?, hints?, customOnly?, customWords? }` | hôte, au salon |
+| `player:update` | `{ name?, avatar? }` + callback | joueur |
 | `room:kick` | `playerId` | hôte |
 | `game:start` | callback | hôte |
 | `word:choose` | index 0..2 | dessinateur |
 | `draw` | op de dessin (voir plus bas) | dessinateur |
 | `draw:undo` | | dessinateur |
 | `chat` | texte (100 car. max) | joueur |
-| `react` | `1` ou `-1` | devineurs |
+| `react` | `1` ou `-1` (vote pour le dessin) | devineurs, pendant le tour et à sa fin |
 
 ### Serveur → client
 
@@ -53,7 +54,11 @@ L'état de chaque salon vit en mémoire dans le serveur (`Room` dans `game.js`).
 | `chat` | Message (`chat`, `system`, `success`, `close`, `secret`, …) |
 | `reactions`, `sfx`, `kicked` | Divers |
 
-### Ops de dessin
+### Mots et modes de jeu
+
+Les mots sont rangés en paquets dans `server/src/words.js` : classique, facile, difficile, geek, hardcore et tout mélangé (574 mots). Un **mode préréglé** (normal, rapide, facile, geek, expert, hardcore) règle d'un coup le paquet, le nombre de manches, le temps et les indices. Si l'hôte change ensuite un de ces réglages à la main, le mode passe en « Perso ». Les mots perso de l'hôte s'ajoutent au paquet choisi, ou le remplacent avec l'option « uniquement nos mots ».
+
+## Ops de dessin
 
 Le canvas a une résolution logique fixe de **800×600**, mise à l'échelle par le CSS. Toutes les coordonnées sont dans ce repère, ce qui rend le rendu identique chez tout le monde, y compris le pot de peinture.
 
@@ -65,11 +70,22 @@ Le canvas a une résolution logique fixe de **800×600**, mise à l'échelle par
 
 Annuler retire toutes les ops consécutives qui partagent le même identifiant de trait `s`.
 
+### Rendu côté navigateur
+
+Le client ne relit jamais les pixels du `<canvas>`. Chaque trait et chaque remplissage est calculé dans un tableau de pixels en mémoire (trait rond au bord adouci, remplissage par balayage de lignes), puis seulement affiché avec `putImageData`. Deux raisons :
+
+- les navigateurs anti-pistage (LibreWolf, Brave, Tor) brouillent volontairement la lecture d'un canvas, ce qui cassait le pot de peinture ;
+- le résultat est identique au pixel près sur tous les navigateurs, donc chez tous les joueurs.
+
+Les miniatures de la galerie sont calculées depuis ce même tableau.
+
 ## Score
 
 - Devineur : `100 + 400 × (temps restant / temps total)`, +50 pour le premier
 - Dessinateur : `50 + 50 × (temps restant / temps total)` par joueur qui trouve
 - Indices : jusqu'à 3 lettres dévoilées à 45 %, 65 % et 82 % du temps
+- Votes : pendant le dessin et la fin du tour, chaque devineur peut voter pour ou contre le dessin. Le dessinateur gagne 25 points par vote positif net
+- Meilleur dessin : en fin de partie, le dessin qui a le plus de votes positifs nets rapporte 150 points de plus à son auteur
 
 ## Sécurité
 

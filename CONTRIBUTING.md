@@ -36,7 +36,7 @@ On ne pousse jamais directement sur `main`.
 
 | Je veux… | Fichier |
 |---|---|
-| Ajouter des mots | `server/src/words.js` |
+| Ajouter des mots ou un paquet, régler un mode | `server/src/words.js` |
 | Changer les règles, le score, les délais | `server/src/game.js` (constantes en haut du fichier) |
 | Ajouter un événement réseau | `server/src/game.js` (fonction `attach`) et `web/public/app.js` (section réseau) |
 | Modifier l'interface | `web/public/index.html`, `style.css`, `app.js` |
@@ -59,7 +59,9 @@ La référence complète est la page `/charte.html` du jeu. Les règles à reten
 
 **Gameplay**
 - [ ] Mode équipes
-- [ ] Packs de mots thématiques au choix (cyber, films, ESGI) et autres langues
+- [x] Paquets de mots thématiques et modes de jeu préréglés
+- [x] Vote pour le meilleur dessin
+- [ ] Paquet de mots ESGI et autres langues
 - [ ] Vote pour exclure un joueur
 - [ ] Mode « dessin à l'aveugle »
 
