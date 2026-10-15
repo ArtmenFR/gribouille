@@ -22,3 +22,16 @@ test('cleanText retire les caractères de contrôle et coupe', () => {
   assert.equal(cleanText('a'.repeat(50), 16).length, 16);
   assert.equal(cleanText(null, 10), '');
 });
+
+test('les pages chargent les scripts avec le numéro de version (anti-cache)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  for (const page of ['index.html', 'charte.html']) {
+    const html = readFileSync(new URL(`../../web/public/${page}`, import.meta.url), 'utf8');
+    const refs = [...html.matchAll(/(?:src|href)="([a-z]+\.(?:js|css))(\?v=[^"]*)?"/g)];
+    assert.ok(refs.length > 0, `aucun script trouvé dans ${page}`);
+    for (const [, file, query] of refs) {
+      assert.equal(query, `?v=${version}`, `${page} : ${file} doit être chargé avec ?v=${version}`);
+    }
+  }
+});

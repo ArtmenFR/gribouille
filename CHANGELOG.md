@@ -1,5 +1,10 @@
 # Historique des versions
 
+## 1.2.2 · 15 octobre 2026
+
+- Les scripts et styles sont chargés avec le numéro de version dans leur adresse : après une mise à jour, le navigateur télécharge forcément la nouvelle version, même s'il gardait l'ancienne en cache.
+- Un test vérifie que ce numéro correspond toujours à la version du serveur.
+
 ## 1.2.1 · 15 octobre 2026
 
 - nginx : les scripts et styles sont revalidés à chaque chargement, une mise à jour est visible dès le premier rechargement.

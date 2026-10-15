@@ -172,7 +172,7 @@ Ces problèmes sont tous apparus en conditions réelles, sur la machine Fedora d
 
 **Symptôme.** Après une mise à jour réussie côté serveur, les nouveautés n'apparaissaient pas dans le navigateur.
 **Cause.** nginx autorisait les navigateurs à garder les scripts en cache pendant une heure : la nouvelle page était chargée avec l'ancien script.
-**Solution.** Les scripts, styles et pages sont désormais revalidés à chaque chargement (`Cache-Control: no-cache`, réponse 304 très légère si rien n'a changé). Seules les polices, qui ne changent jamais, restent en cache. Piège évité au passage : un `add_header` dans un bloc `location` fait perdre tous les en-têtes de sécurité hérités, dont la CSP. On utilise donc la directive `expires`, et la CI vérifie maintenant la présence de la CSP.
+**Solution.** Les scripts, styles et pages sont désormais revalidés à chaque chargement (`Cache-Control: no-cache`, réponse 304 très légère si rien n'a changé). Seules les polices, qui ne changent jamais, restent en cache. En complément, chaque script et feuille de style est chargé avec le numéro de version dans son adresse (`app.js?v=1.2.2`) : à chaque mise à jour l'adresse change, et même un navigateur qui gardait l'ancienne copie est obligé de télécharger la nouvelle. Un test vérifie que ce numéro suit toujours la version du serveur. Piège évité au passage : un `add_header` dans un bloc `location` fait perdre tous les en-têtes de sécurité hérités, dont la CSP. On utilise donc la directive `expires`, et la CI vérifie maintenant la présence de la CSP.
 
 ### 8.6 SELinux et le mode développement
 
