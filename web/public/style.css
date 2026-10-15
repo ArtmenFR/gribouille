@@ -337,8 +337,8 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; cursor: defaul
 /* ---------- Galerie ---------- */
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s4); }
 .thumb { margin: 0; animation: row-in var(--t-med) var(--ease-spring) both; }
-.thumb img { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: var(--r-sm); background: #fff; box-shadow: 0 0 0 1px var(--paper-line), 0 8px 16px -10px rgba(0, 0, 0, .5); transition: transform var(--t-med) var(--ease-spring); }
-.thumb:hover img { transform: rotate(-2deg) scale(1.04); }
+.thumb img, .thumb canvas { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: var(--r-sm); background: #fff; box-shadow: 0 0 0 1px var(--paper-line), 0 8px 16px -10px rgba(0, 0, 0, .5); transition: transform var(--t-med) var(--ease-spring); }
+.thumb:hover img, .thumb:hover canvas { transform: rotate(-2deg) scale(1.04); }
 .thumb figcaption { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s2); font-size: var(--fs-sm); }
 .thumb .w { font-weight: 800; }
 .thumb .by { color: var(--ink-2); margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -489,7 +489,7 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; cursor: defaul
 .podium .p3 .block { height: 58px; background: var(--coral); animation-delay: .1s; }
 @keyframes grow { from { transform: scaleY(0); } }
 .over-gallery { display: flex; gap: var(--s2); overflow-x: auto; max-width: 100%; padding-bottom: var(--s1); }
-.over-gallery img { height: 60px; aspect-ratio: 4 / 3; border-radius: 6px; background: #fff; flex: none; animation: row-in var(--t-med) var(--ease-spring) both; }
+.over-gallery img, .over-gallery canvas { height: 60px; aspect-ratio: 4 / 3; border-radius: 6px; background: #fff; flex: none; animation: row-in var(--t-med) var(--ease-spring) both; }
 .over-actions { display: flex; gap: var(--s2); }
 
 /* gerbe de craie quand on trouve */
@@ -597,7 +597,7 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; cursor: defaul
   .podium .avatar.big { width: 56px; height: 56px; }
   .podium .crown, .podium .crown .icon { height: 20px; width: 20px; }
   .podium .pscore { font-size: var(--fs-xs); }
-  .over-gallery img { height: 44px; }
+  .over-gallery img, .over-gallery canvas { height: 44px; }
   .overlay .btn { min-height: 38px; }
   .overlay h3 { font-size: var(--fs-lg); }
   .choice { font-size: var(--fs-lg); padding: var(--s3) var(--s4); }

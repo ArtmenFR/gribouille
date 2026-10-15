@@ -119,7 +119,7 @@
   let currentScreen = null;
   const shownScores = new Map();   // pour animer les scores
   const knownGuessed = new Set();  // pour faire clignoter ceux qui viennent de trouver
-  let gallery = store.get('gb_gallery', []);
+  let gallery = [];               // dessins de la partie (en mémoire, pour la session)
 
   const socket = io({ transports: ['websocket', 'polling'] });
 
@@ -419,16 +419,46 @@
   }
 
   // ---------- galerie ----------
+  function hasInk() {
+    for (let i = 0; i < buf.length; i += 16) if (buf[i] < 250 || buf[i + 1] < 250 || buf[i + 2] < 250) return true;
+    return false;
+  }
   function captureTurn() {
-    if (!S || !ops.length) return;
+    if (!S || !hasInk()) return;
     const drawer = S.players.find((p) => p.id === S.drawerId);
-    const c = document.createElement('canvas');
-    c.width = 240;
-    c.height = 180;
-    c.getContext('2d').drawImage(canvas, 0, 0, 240, 180);
-    gallery.push({ word: S.word, by: drawer?.name ?? '', av: drawer?.avatar, img: c.toDataURL('image/jpeg', 0.75) });
+    // miniature 240x180 : moyenne de chaque bloc de pixels de la mémoire du dessin
+    const TW = 240;
+    const TH = 180;
+    const thumb = new ImageData(TW, TH);
+    const t = thumb.data;
+    const sx = W / TW;
+    const sy = H / TH;
+    for (let y = 0; y < TH; y++) {
+      for (let x = 0; x < TW; x++) {
+        let r = 0, g = 0, b = 0, n = 0;
+        const xa = Math.floor(x * sx), xb = Math.floor((x + 1) * sx);
+        const ya = Math.floor(y * sy), yb = Math.floor((y + 1) * sy);
+        for (let yy = ya; yy < yb; yy++) {
+          for (let xx = xa; xx < xb; xx++) {
+            const i = (yy * W + xx) * 4;
+            r += buf[i]; g += buf[i + 1]; b += buf[i + 2]; n++;
+          }
+        }
+        const o = (y * TW + x) * 4;
+        t[o] = r / n; t[o + 1] = g / n; t[o + 2] = b / n; t[o + 3] = 255;
+      }
+    }
+    gallery.push({ word: S.word, by: drawer?.name ?? '', av: drawer?.avatar, pix: thumb });
     gallery = gallery.slice(-24);
-    store.set('gb_gallery', gallery);
+  }
+  function thumbCanvas(g) {
+    const c = el('canvas');
+    c.width = g.pix.width;
+    c.height = g.pix.height;
+    c.getContext('2d').putImageData(g.pix, 0, 0);
+    c.setAttribute('role', 'img');
+    c.setAttribute('aria-label', `Dessin de ${g.by} : ${g.word ?? ''}`);
+    return c;
   }
   function renderGallery() {
     const show = gallery.length > 0;
@@ -437,9 +467,7 @@
     $('#gallery-lobby').replaceChildren(...gallery.map((g, i) => {
       const f = el('figure', 'thumb');
       f.style.animationDelay = `${i * 40}ms`;
-      const img = el('img');
-      img.src = g.img;
-      img.alt = `Dessin de ${g.by} : ${g.word ?? ''}`;
+      const img = thumbCanvas(g);
       const cap = el('figcaption');
       cap.append(el('span', 'w', g.word ?? '?'), el('span', 'by', g.by));
       f.append(img, cap);
@@ -583,9 +611,7 @@
       if (thisGame.length) {
         const g = el('div', 'over-gallery');
         thisGame.slice(-8).forEach((t, i) => {
-          const img = el('img');
-          img.src = t.img;
-          img.alt = t.word ?? '';
+          const img = thumbCanvas(t);
           img.title = `${t.word} · ${t.by}`;
           img.style.animationDelay = `${900 + i * 60}ms`;
           g.append(img);
@@ -655,7 +681,6 @@
       if (S.state === 'gameOver') sfx.win();
       if (S.state === 'choosing' && (lastState === 'lobby' || lastState === 'gameOver' || lastState === null) && S.round === 1) {
         gallery = [];
-        store.set('gb_gallery', gallery);
         shownScores.clear();
       }
       lastState = S.state;
@@ -706,43 +731,80 @@
   }
 
   // ---------- canvas ----------
+  // Le dessin est calculé pixel par pixel dans une mémoire du jeu (buf), puis seulement
+  // affiché dans le <canvas>. On ne relit jamais le canvas : certains navigateurs
+  // (LibreWolf, Brave, Tor) brouillent volontairement cette lecture contre le pistage,
+  // ce qui cassait le pot de peinture. Le rendu est aussi identique sur tous les navigateurs.
   const canvas = $('#canvas');
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const ctx = canvas.getContext('2d');
+  const frame = ctx.createImageData(W, H);
+  const buf = frame.data;
+  let dirty = null;
+  let flushQueued = false;
 
-  function wipe() { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H); }
+  function markDirty(x0, y0, x1, y1) {
+    if (!dirty) dirty = { x0, y0, x1, y1 };
+    else {
+      dirty.x0 = Math.min(dirty.x0, x0); dirty.y0 = Math.min(dirty.y0, y0);
+      dirty.x1 = Math.max(dirty.x1, x1); dirty.y1 = Math.max(dirty.y1, y1);
+    }
+    if (!flushQueued) { flushQueued = true; requestAnimationFrame(flush); }
+  }
+  function flush() {
+    flushQueued = false;
+    if (!dirty) return;
+    const { x0, y0, x1, y1 } = dirty;
+    dirty = null;
+    ctx.putImageData(frame, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+  }
+  function wipe() { buf.fill(255); markDirty(0, 0, W - 1, H - 1); }
   function hexToRgb(h) { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
 
-  function applyOp(op) {
-    if (op.t === 'l') {
-      const [x0, y0, x1, y1] = op.p;
-      if (x0 === x1 && y0 === y1) {
-        ctx.fillStyle = op.c;
-        ctx.beginPath();
-        ctx.arc(x0, y0, op.w / 2, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.strokeStyle = op.c;
-        ctx.lineWidth = op.w;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
+  // Trait rond (capsule) avec un bord adouci d'un pixel
+  function stroke(x0, y0, x1, y1, w, hex) {
+    const [r, g, b] = hexToRgb(hex);
+    const rad = Math.max(0.5, w / 2);
+    const minX = Math.max(0, Math.floor(Math.min(x0, x1) - rad - 1));
+    const maxX = Math.min(W - 1, Math.ceil(Math.max(x0, x1) + rad + 1));
+    const minY = Math.max(0, Math.floor(Math.min(y0, y1) - rad - 1));
+    const maxY = Math.min(H - 1, Math.ceil(Math.max(y0, y1) + rad + 1));
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len2 = dx * dx + dy * dy;
+    for (let y = minY; y <= maxY; y++) {
+      const py = y + 0.5;
+      for (let x = minX; x <= maxX; x++) {
+        const px = x + 0.5;
+        let t = len2 ? ((px - x0) * dx + (py - y0) * dy) / len2 : 0;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const ex = px - (x0 + t * dx);
+        const ey = py - (y0 + t * dy);
+        const cov = rad + 0.5 - Math.sqrt(ex * ex + ey * ey);
+        if (cov <= 0) continue;
+        const i = (y * W + x) * 4;
+        if (cov >= 1) { buf[i] = r; buf[i + 1] = g; buf[i + 2] = b; }
+        else {
+          buf[i] += (r - buf[i]) * cov;
+          buf[i + 1] += (g - buf[i + 1]) * cov;
+          buf[i + 2] += (b - buf[i + 2]) * cov;
+        }
+        buf[i + 3] = 255;
       }
-    } else if (op.t === 'f') {
-      floodFill(Math.floor(op.p[0]), Math.floor(op.p[1]), op.c);
-    } else if (op.t === 'c') {
-      wipe();
     }
+    markDirty(minX, minY, maxX, maxY);
   }
-  function redraw() { wipe(); for (const op of ops) applyOp(op); }
 
-  // Remplissage « pot de peinture » par balayage de lignes
+  function applyOp(op) {
+    if (op.t === 'l') stroke(op.p[0], op.p[1], op.p[2], op.p[3], op.w, op.c);
+    else if (op.t === 'f') floodFill(Math.floor(op.p[0]), Math.floor(op.p[1]), op.c);
+    else if (op.t === 'c') wipe();
+  }
+  function redraw() { wipe(); for (const op of ops) applyOp(op); flush(); }
+
+  // Remplissage « pot de peinture » par balayage de lignes, dans la mémoire du jeu
   function floodFill(x, y, hex) {
     if (x < 0 || y < 0 || x >= W || y >= H) return;
-    const img = ctx.getImageData(0, 0, W, H);
-    const d = img.data;
+    const d = buf;
     const [r, g, b] = hexToRgb(hex);
     const i0 = (y * W + x) * 4;
     const tr = d[i0], tg = d[i0 + 1], tb = d[i0 + 2];
@@ -751,6 +813,7 @@
     const match = (i) => Math.abs(d[i] - tr) <= TOL && Math.abs(d[i + 1] - tg) <= TOL && Math.abs(d[i + 2] - tb) <= TOL;
     const seen = new Uint8Array(W * H);
     const stack = [[x, y]];
+    let minX = x, maxX = x, minY = y, maxY = y;
     while (stack.length) {
       let [cx, cy] = stack.pop();
       let p = cy * W + cx;
@@ -758,6 +821,9 @@
       cx++; p++;
       let up = false;
       let down = false;
+      if (cx < minX) minX = cx;
+      if (cy < minY) minY = cy;
+      if (cy > maxY) maxY = cy;
       while (cx < W && !seen[p] && match(p * 4)) {
         seen[p] = 1;
         const i = p * 4;
@@ -772,8 +838,9 @@
         }
         cx++; p++;
       }
+      if (cx - 1 > maxX) maxX = cx - 1;
     }
-    ctx.putImageData(img, 0, 0);
+    markDirty(minX, minY, maxX, maxY);
   }
 
   function toCanvas(e) {
