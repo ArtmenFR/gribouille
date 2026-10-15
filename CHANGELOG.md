@@ -1,5 +1,10 @@
 # Historique des versions
 
+## 1.2.1 · 15 octobre 2026
+
+- nginx : les scripts et styles sont revalidés à chaque chargement, une mise à jour est visible dès le premier rechargement.
+- CI : vérifie la présence de la CSP et de l'en-tête de cache.
+
 ## 1.2.0 · 15 octobre 2026
 
 **Nouveautés**

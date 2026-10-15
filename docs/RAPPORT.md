@@ -168,12 +168,18 @@ Ces problèmes sont tous apparus en conditions réelles, sur la machine Fedora d
 **Solution.** Le jeu calcule désormais le dessin lui-même dans un tableau de pixels en mémoire et ne fait que l'afficher. Il ne relit plus jamais le canvas, et le rendu est identique sur tous les navigateurs. Vérifié avec un navigateur volontairement piégé : zéro lecture du canvas.
 **Ce qu'on retient.** Une protection de vie privée côté client peut casser une fonctionnalité légitime. Mieux vaut adapter l'application que demander aux joueurs de baisser leur protection.
 
-### 8.5 SELinux et le mode développement
+### 8.5 Mise à jour invisible chez les joueurs
+
+**Symptôme.** Après une mise à jour réussie côté serveur, les nouveautés n'apparaissaient pas dans le navigateur.
+**Cause.** nginx autorisait les navigateurs à garder les scripts en cache pendant une heure : la nouvelle page était chargée avec l'ancien script.
+**Solution.** Les scripts, styles et pages sont désormais revalidés à chaque chargement (`Cache-Control: no-cache`, réponse 304 très légère si rien n'a changé). Seules les polices, qui ne changent jamais, restent en cache. Piège évité au passage : un `add_header` dans un bloc `location` fait perdre tous les en-têtes de sécurité hérités, dont la CSP. On utilise donc la directive `expires`, et la CI vérifie maintenant la présence de la CSP.
+
+### 8.6 SELinux et le mode développement
 
 **Cause.** Sur Fedora, SELinux bloque par défaut l'accès d'un conteneur aux dossiers de l'hôte montés en volume.
 **Solution.** Option `:z` sur les montages du fichier `docker-compose.dev.yml`, qui donne la bonne étiquette SELinux aux fichiers.
 
-### 8.6 La CSP bloque l'outil de test
+### 8.7 La CSP bloque l'outil de test
 
 **Constat.** Un outil de test qui exécutait du code passé sous forme de texte a été bloqué par la CSP du jeu.
 **Lecture.** Ce n'était pas un bug mais la preuve que la politique de sécurité fonctionne : elle bloque exactement ce qu'un attaquant tenterait. Le test a été adapté, la CSP n'a pas été affaiblie.
