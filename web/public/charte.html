@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Charte graphique · Gribouille</title>
+  <meta name="theme-color" content="#1F2A27">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="charte.css">
+</head>
+<body>
+<div class="ch">
+
+  <header class="ch-head">
+    <a class="ch-back" href="/"><span data-icon="exit"></span>Retour au jeu</a>
+    <img class="ch-logo" src="logo.svg" alt="Gribouille">
+    <h1>Charte graphique</h1>
+    <p class="ch-lead">Gribouille est un jeu où l'on dessine mal et où l'on rit beaucoup. Son identité tient en une idée : <strong>tout se dessine au trait</strong>. Une ardoise sombre, des feuilles de papier posées dessus, des marqueurs de couleur et une écriture à la main, lisible avant tout.</p>
+    <nav class="ch-nav" aria-label="Sommaire">
+      <a href="#logo">Logo</a><a href="#couleurs">Couleurs</a><a href="#typo">Typographie</a><a href="#icones">Icônes</a><a href="#persos">Persos</a><a href="#composants">Composants</a><a href="#mouvement">Mouvement</a><a href="#ton">Ton</a>
+    </nav>
+  </header>
+
+  <!-- LOGO -->
+  <section id="logo" class="ch-sec">
+    <h2 class="chalk-title">Logo</h2>
+    <p class="ch-p">Un mot-symbole dessiné à la main, sans police : chaque lettre est un seul trait de marqueur, doublé d'une ombre jaune décalée et souligné de deux coups de corail. Il s'écrit lui-même à l'ouverture du jeu.</p>
+    <div class="ch-grid two">
+      <figure class="ch-card dark"><img src="logo.svg" alt="Logo sur ardoise"><figcaption>Version craie, sur ardoise (principale)</figcaption></figure>
+      <figure class="ch-card light"><img src="logo-ink.svg" alt="Logo sur papier"><figcaption>Version encre, sur papier</figcaption></figure>
+    </div>
+    <div class="ch-grid three small">
+      <figure class="ch-card dark"><img class="fav" src="favicon.svg" alt="Icône"><figcaption>Icône d'application : le « g » seul</figcaption></figure>
+      <div class="ch-rule ok"><span data-icon="check"></span><p>Garder une marge libre au moins égale à la hauteur du « o » autour du logo. Taille minimale : 96 px de large.</p></div>
+      <div class="ch-rule ko"><span data-icon="close"></span><p>Ne pas le recolorer, l'étirer, lui ajouter un contour ni le poser sur une photo chargée.</p></div>
+    </div>
+  </section>
+
+  <!-- COULEURS -->
+  <section id="couleurs" class="ch-sec">
+    <h2 class="chalk-title">Couleurs</h2>
+    <p class="ch-p">Deux supports, l'ardoise et le papier, et cinq marqueurs. Le jaune est la seule couleur d'action principale : un seul bouton jaune par écran.</p>
+    <h3 class="ch-h3">Supports</h3>
+    <div class="ch-swatches" id="sw-base"></div>
+    <h3 class="ch-h3">Marqueurs</h3>
+    <div class="ch-swatches" id="sw-markers"></div>
+  </section>
+
+  <!-- TYPO -->
+  <section id="typo" class="ch-sec">
+    <h2 class="chalk-title">Typographie</h2>
+    <p class="ch-p">Une seule famille : <strong>Shantell Sans</strong>, une écriture manuscrite pensée pour être lue en interface. Trois graisses (Regular 400, Semibold 600, Extrabold 800), une échelle de rapport 1,25. Hébergée avec le jeu, aucune requête externe.</p>
+    <div class="sheet ch-type">
+      <div class="t-row"><span class="t-meta">39 px · 800</span><span class="t-3xl">Dessine, devine</span></div>
+      <div class="t-row"><span class="t-meta">31 px · 800</span><span class="t-2xl">Le mot était « girafe »</span></div>
+      <div class="t-row"><span class="t-meta">25 px · 800</span><span class="t-xl">À toi de dessiner</span></div>
+      <div class="t-row"><span class="t-meta">20 px · 800</span><span class="t-lg">Règles de la partie</span></div>
+      <div class="t-row"><span class="t-meta">16 px · 400</span><span class="t-md">Les autres devinent dans le chat. Plus on trouve vite, plus on marque.</span></div>
+      <div class="t-row"><span class="t-meta">14 px · 600</span><span class="t-sm">Temps par dessin</span></div>
+      <div class="t-row"><span class="t-meta">12 px · 400</span><span class="t-xs">Accessoire</span></div>
+    </div>
+  </section>
+
+  <!-- ICONES -->
+  <section id="icones" class="ch-sec">
+    <h2 class="chalk-title">Icônes</h2>
+    <p class="ch-p">Un jeu d'icônes maison, au même trait que le logo : feutre de 2,2 px aux bouts ronds, sur une grille de 24. Jamais d'emoji dans l'interface.</p>
+    <div class="ch-icons" id="icon-grid"></div>
+  </section>
+
+  <!-- PERSOS -->
+  <section id="persos" class="ch-sec">
+    <h2 class="chalk-title">Persos</h2>
+    <p class="ch-p">Chaque joueur dessine son perso en sweat à capuche : 8 peaux, 12 sweats, 10 regards, 10 bouches, 10 accessoires, soit 96 000 combinaisons. Trait d'encre de 3,5 px, aplats sans dégradé.</p>
+    <div class="ch-avatars" id="avatar-grid"></div>
+    <button class="btn btn-ghost" id="reroll" type="button"><span data-icon="dice"></span>Tirer d'autres persos</button>
+  </section>
+
+  <!-- COMPOSANTS -->
+  <section id="composants" class="ch-sec">
+    <h2 class="chalk-title">Composants</h2>
+    <div class="ch-grid two">
+      <div class="sheet ch-comp">
+        <h3 class="sheet-title">Boutons</h3>
+        <div class="ch-row"><button class="btn btn-primary" type="button"><span data-icon="play"></span>Action principale</button><button class="btn btn-dark" type="button">Secondaire</button><button class="btn btn-soft" type="button">Discret</button></div>
+        <p class="note">Jaune : l'action qui fait avancer (créer, lancer, valider). Encre : l'alternative directe. Discret : tout le reste.</p>
+        <h3 class="sheet-title ch-mt">Champs</h3>
+        <label class="field"><span>Pseudo</span><input placeholder="Écris ton pseudo"></label>
+        <label class="switch ch-mt-s"><input type="checkbox" checked><span class="track"></span><span>Interrupteur activé</span></label>
+      </div>
+      <div class="sheet ch-comp">
+        <h3 class="sheet-title">Messages du chat</h3>
+        <div class="ch-chat" id="chat-demo"></div>
+        <h3 class="sheet-title ch-mt">Ligne joueur</h3>
+        <ul class="ch-players" id="player-demo"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOUVEMENT -->
+  <section id="mouvement" class="ch-sec">
+    <h2 class="chalk-title">Mouvement</h2>
+    <p class="ch-p">Tout ce qui apparaît se trace, comme un trait de feutre : de gauche à droite, rapide au départ, qui ralentit à la fin. Les retours de jeu (bonne réponse, podium) rebondissent légèrement. Si le système demande moins d'animations, tout s'affiche directement.</p>
+    <div class="ch-grid three">
+      <div class="ch-card dark demo"><svg class="demo-line" viewBox="0 0 200 40"><path pathLength="1" d="M8 24 C50 8 90 34 130 18 S180 14 192 22"/></svg><figcaption>Tracé · 420 ms · ease-out</figcaption></div>
+      <div class="ch-card dark demo"><div class="demo-pop"><span data-icon="check"></span></div><figcaption>Rebond · 500 ms · ressort</figcaption></div>
+      <div class="ch-card dark demo"><div class="timer demo-timer"><svg viewBox="0 0 60 60"><path class="timer-track" d="M30 6 C44 5 55 16 54 30 C54 44 43 55 30 54 C16 55 5 44 6 30 C6 16 17 5 30 6"/><path class="timer-ring" id="demo-ring" pathLength="1" d="M30 6 C44 5 55 16 54 30 C54 44 43 55 30 54 C16 55 5 44 6 30 C6 16 17 5 30 6"/></svg><span id="demo-n">80</span></div><figcaption>Chrono griffonné qui s'efface</figcaption></div>
+    </div>
+    <button class="btn btn-ghost" id="replay" type="button"><span data-icon="replay"></span>Rejouer les animations</button>
+    <table class="ch-table">
+      <thead><tr><th>Jeton</th><th>Valeur</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr><td>--t-fast</td><td>120 ms</td><td>survol, appui</td></tr>
+        <tr><td>--t-med</td><td>260 ms</td><td>apparition d'un message, d'une ligne</td></tr>
+        <tr><td>--t-slow</td><td>520 ms</td><td>tracé d'un souligné, arrivée d'une feuille</td></tr>
+        <tr><td>--ease-out</td><td>cubic-bezier(.22, 1, .36, 1)</td><td>tout ce qui se trace ou glisse</td></tr>
+        <tr><td>--ease-spring</td><td>cubic-bezier(.34, 1.56, .64, 1)</td><td>récompenses : points, coche, podium</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- TON -->
+  <section id="ton" class="ch-sec">
+    <h2 class="chalk-title">Ton et écriture</h2>
+    <p class="ch-p">On parle comme entre potes, au tutoiement, en phrases courtes. Un bouton dit exactement ce qu'il fait. Une erreur explique quoi faire, sans s'excuser.</p>
+    <div class="ch-grid two">
+      <div class="ch-rule ok"><span data-icon="check"></span><div><p>« Lancer la partie »</p><p>« Le code fait 4 lettres. »</p><p>« Il faut au moins 2 joueurs. Partage le code ou le lien. »</p></div></div>
+      <div class="ch-rule ko"><span data-icon="close"></span><div><p>« Valider »</p><p>« Oups, une erreur est survenue » suivi d'un emoji</p><p>« Veuillez saisir un identifiant valide »</p></div></div>
+    </div>
+  </section>
+
+  <footer class="foot">Gribouille · charte v1 · octobre 2026</footer>
+</div>
+<script src="icons.js"></script>
+<script src="avatar.js"></script>
+<script src="charte.js"></script>
+</body>
+</html>

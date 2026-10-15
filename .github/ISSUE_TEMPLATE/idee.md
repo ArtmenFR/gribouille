@@ -1,5 +1,5 @@
 ---
-name: 💡 Idée
+name: Idée
 about: Proposer une fonctionnalité
 labels: enhancement
 ---

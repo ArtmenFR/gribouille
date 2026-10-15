@@ -175,10 +175,10 @@ test('on peut changer de pseudo et d\'avatar dans le salon', async () => {
   await call(b, 'room:join', { name: 'Lucas', code: r.code, token: 'q'.repeat(32) });
   await until(() => last(a)?.players.length === 2);
   assert.match((await call(b, 'player:update', { name: 'maxime' })).error, /déjà pris/);
-  assert.ok((await call(b, 'player:update', { name: '  Lulu 🦊 ', avatar: { s: 2, h: 11, e: 9, m: 99, a: 'x' } })).ok);
-  await until(() => last(a).players.some((p) => p.name === 'Lulu 🦊'));
-  assert.deepEqual(last(a).players.find((p) => p.name === 'Lulu 🦊').avatar, { s: 2, h: 11, e: 9, m: 9, a: 0 }, 'pièces hors limites ramenées à une valeur sûre');
-  assert.ok(a.chats.some((m) => m.text === 'Lucas s\'appelle maintenant Lulu 🦊'));
+  assert.ok((await call(b, 'player:update', { name: '  Lulu le boss ', avatar: { s: 2, h: 11, e: 9, m: 99, a: 'x' } })).ok);
+  await until(() => last(a).players.some((p) => p.name === 'Lulu le boss'));
+  assert.deepEqual(last(a).players.find((p) => p.name === 'Lulu le boss').avatar, { s: 2, h: 11, e: 9, m: 9, a: 0 }, 'pièces hors limites ramenées à une valeur sûre');
+  assert.ok(a.chats.some((m) => m.text === 'Lucas s\'appelle maintenant Lulu le boss'));
   assert.ok((await call(b, 'player:update', { name: '' })).error);
 });
 

@@ -1,4 +1,10 @@
+# syntax=docker/dockerfile:1
+# Front statique + reverse proxy : nginx sert les fichiers et relaie le WebSocket vers le serveur de jeu.
 FROM nginx:1.27-alpine
+
+LABEL org.opencontainers.image.title="gribouille-web" \
+      org.opencontainers.image.description="Front et reverse proxy du jeu Gribouille" \
+      org.opencontainers.image.licenses="MIT"
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY public /usr/share/nginx/html

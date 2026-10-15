@@ -292,7 +292,7 @@ class Room {
     if (this.hostId === p.id) {
       const next = this.connected[0];
       this.hostId = next ? next.id : null;
-      if (next) this.sys(`${next.name} devient l'hôte 👑`);
+      if (next) this.sys(`${next.name} devient l'hôte`);
     }
     if (this.inGame() && this.connected.length < 2) {
       this.sys('Pas assez de joueurs, retour au salon.');
@@ -365,7 +365,7 @@ class Room {
     }
     this.toLobby();
     this.podium = null;
-    this.sys('🎨 La partie commence !', 'round');
+    this.sys('La partie commence !', 'round');
     this.nextTurn();
     return null;
   }
@@ -419,7 +419,7 @@ class Room {
     this.deadline = this.turnStart + this.settings.drawTime * 1000;
     const letters = [...this.word].filter(isLetter).length;
     this.maxHints = this.settings.hints ? Math.min(3, Math.max(0, Math.floor((letters - 1) / 2))) : 0;
-    this.sys(`${p.name} dessine ✏️`, 'turn');
+    this.sys(`${p.name} dessine`, 'turn');
     this.broadcast();
   }
 
@@ -434,7 +434,7 @@ class Room {
   checkAllGuessed() {
     const guessers = this.connected.filter((p) => p.id !== this.drawerId);
     if (guessers.length > 0 && guessers.every((g) => g.guessed)) {
-      this.endTurn('Tout le monde a trouvé ! 🎉');
+      this.endTurn('Tout le monde a trouvé !');
       return true;
     }
     return false;
@@ -457,7 +457,7 @@ class Room {
     this.deadline = Date.now() + GAME_OVER_MS;
     const ranked = [...this.players.values()].sort((a, b) => b.score - a.score);
     this.podium = ranked.map((p) => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score }));
-    if (ranked[0]) this.sys(`🏆 ${ranked[0].name} remporte la partie !`, 'win');
+    if (ranked[0]) this.sys(`${ranked[0].name} remporte la partie !`, 'win');
     recordGame(this.podium).catch(() => {});
     this.broadcast();
   }
@@ -469,7 +469,7 @@ class Room {
       else this.nextTurn();
     } else if (this.state === 'drawing') {
       if (now >= this.deadline) {
-        this.endTurn('⏰ Temps écoulé !');
+        this.endTurn('Temps écoulé !');
       } else if (this.hintsGiven < this.maxHints) {
         const frac = (now - this.turnStart) / (this.deadline - this.turnStart);
         if (frac >= HINT_THRESHOLDS[this.hintsGiven]) this.revealHint();
@@ -501,7 +501,7 @@ class Room {
       if (w.length >= 4 && levenshtein(g, w) <= 1) {
         // "Presque" : visible uniquement par l'auteur, pour ne pas souffler la réponse aux autres
         this.emitTo(p, 'chat', msg);
-        this.emitTo(p, 'chat', { kind: 'close', text: `« ${text} », tu chauffes ! 🔥` });
+        this.emitTo(p, 'chat', { kind: 'close', text: `« ${text} » : tu chauffes !` });
         return;
       }
     }
@@ -530,7 +530,7 @@ class Room {
       drawer.score += dp;
       drawer.lastGain += dp;
     }
-    this.sys(`${p.name} a trouvé !${first ? ' 🥇' : ''}`, 'success');
+    this.sys(first ? `${p.name} a trouvé en premier !` : `${p.name} a trouvé !`, 'success');
     this.emitTo(p, 'chat', { kind: 'success-me', text: `Bien vu ! C'était « ${this.word} » (+${pts})` });
     this.io.to(this.code).emit('sfx', 'guess');
     if (!this.checkAllGuessed()) this.broadcast();
@@ -627,7 +627,7 @@ export function attach(io) {
 
     socket.on('room:create', (data, cb) => {
       data = obj(data);
-      if (!actionLimit.take()) return reply(cb, { error: 'Doucement 🙂' });
+      if (!actionLimit.take()) return reply(cb, { error: 'Trop de demandes, attends une seconde.' });
       if (!cleanText(data.name, 16)) return reply(cb, { error: 'Choisis un pseudo.' });
       const code = rooms.size < MAX_ROOMS ? genCode() : null;
       if (!code) return reply(cb, { error: 'Serveur plein, réessaie plus tard.' });
@@ -638,7 +638,7 @@ export function attach(io) {
 
     socket.on('room:join', (data, cb) => {
       data = obj(data);
-      if (!actionLimit.take()) return reply(cb, { error: 'Doucement 🙂' });
+      if (!actionLimit.take()) return reply(cb, { error: 'Trop de demandes, attends une seconde.' });
       const code = String(data.code ?? '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
       const r = rooms.get(code);
       if (!r) return reply(cb, { error: 'Aucune partie avec ce code.' });
@@ -650,7 +650,7 @@ export function attach(io) {
     socket.on('room:kick', (id) => me() && room.kick(player, String(id)));
     socket.on('player:update', (data, cb) => {
       if (!me()) return reply(cb, { error: 'Tu n\'es dans aucune partie.' });
-      if (!actionLimit.take()) return reply(cb, { error: 'Doucement 🙂' });
+      if (!actionLimit.take()) return reply(cb, { error: 'Trop de demandes, attends une seconde.' });
       const err = room.updateProfile(player, obj(data));
       reply(cb, err ? { error: err } : { ok: true, name: player.name });
     });
@@ -662,7 +662,7 @@ export function attach(io) {
     socket.on('word:choose', (i) => me() && room.chooseWord(player, i));
     socket.on('chat', (text) => {
       if (!me()) return;
-      if (!chatLimit.take()) return room.emitTo(player, 'chat', { kind: 'error', text: 'Tu écris trop vite 😅' });
+      if (!chatLimit.take()) return room.emitTo(player, 'chat', { kind: 'error', text: 'Tu écris trop vite, attends une seconde.' });
       room.handleChat(player, text);
     });
     socket.on('draw', (op) => me() && drawLimit.take() && room.draw(player, op));

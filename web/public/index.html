@@ -4,146 +4,208 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Gribouille</title>
-  <meta name="description" content="Tague, devine, rigole. Un jeu de dessin multijoueur entre potes.">
-  <meta name="theme-color" content="#2b2a30">
+  <meta name="description" content="Dessine, devine, marque des points. Un jeu de dessin multijoueur entre potes.">
+  <meta name="theme-color" content="#1F2A27">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="fonts/permanent-marker-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/shantell-sans-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
 
-  <!-- ACCUEIL -->
+  <!-- ================= ACCUEIL ================= -->
   <section id="screen-home" class="screen">
-    <header class="brand">
-      <div class="logo-wrap">
-        <h1 class="logo">Gribouille</h1>
-        <svg class="logo-pencil" viewBox="0 0 60 200" aria-hidden="true">
-          <g stroke="#141316" stroke-width="4" stroke-linejoin="round">
-            <rect x="12" y="8" width="36" height="22" rx="8" fill="#ff9bd2"/>
-            <rect x="10" y="28" width="40" height="16" fill="#c9c7cf"/>
-            <path d="M10 44 h40 v104 h-40z" fill="#ffd60a"/>
-            <path d="M23 44 v104 M37 44 v104" fill="none" stroke-width="2.5"/>
-            <path d="M10 148 h40 l-20 44z" fill="#f2c48d"/>
-            <path d="M23 177 l7 15 7 -15z" fill="#141316"/>
+    <header class="hero">
+      <h1 class="logo" aria-label="Gribouille">
+        <svg viewBox="0 0 340 140" aria-hidden="true">
+          <g class="logo-shadow" transform="translate(4 5)">
+            <path pathLength="1" d="M34 56 C28 48 10 48 9 64 C8 82 28 86 34 70"/>
+            <path pathLength="1" d="M35 52 V108 C35 126 12 126 8 114"/>
+            <path pathLength="1" d="M52 52 V90 M52 66 C56 54 66 50 76 54"/>
+            <path pathLength="1" d="M90 54 V90"/>
+            <path pathLength="1" d="M106 16 V90 M106 66 C108 50 134 48 136 66 C138 86 114 94 106 82"/>
+            <path pathLength="1" d="M163 51 C145 50 143 90 161 90 C179 91 181 52 163 51"/>
+            <path pathLength="1" d="M192 54 V74 C192 94 218 94 220 74 V54 V90"/>
+            <path pathLength="1" d="M236 54 V90"/>
+            <path pathLength="1" d="M252 14 V80 C252 92 260 93 266 88"/>
+            <path pathLength="1" d="M276 14 V80 C276 92 284 93 290 88"/>
+            <path pathLength="1" d="M300 72 L330 69 C330 50 302 46 299 66 C296 88 318 96 330 84"/>
           </g>
+          <g class="logo-ink">
+            <path pathLength="1" d="M34 56 C28 48 10 48 9 64 C8 82 28 86 34 70"/>
+            <path pathLength="1" d="M35 52 V108 C35 126 12 126 8 114"/>
+            <path pathLength="1" d="M52 52 V90 M52 66 C56 54 66 50 76 54"/>
+            <path pathLength="1" d="M90 54 V90"/>
+            <path pathLength="1" d="M106 16 V90 M106 66 C108 50 134 48 136 66 C138 86 114 94 106 82"/>
+            <path pathLength="1" d="M163 51 C145 50 143 90 161 90 C179 91 181 52 163 51"/>
+            <path pathLength="1" d="M192 54 V74 C192 94 218 94 220 74 V54 V90"/>
+            <path pathLength="1" d="M236 54 V90"/>
+            <path pathLength="1" d="M252 14 V80 C252 92 260 93 266 88"/>
+            <path pathLength="1" d="M276 14 V80 C276 92 284 93 290 88"/>
+            <path pathLength="1" d="M300 72 L330 69 C330 50 302 46 299 66 C296 88 318 96 330 84"/>
+          </g>
+          <g class="logo-dots">
+            <circle cx="94" cy="36" r="7" class="dot-shadow"/><circle cx="90" cy="32" r="6.5" class="dot-ink"/>
+            <circle cx="240" cy="36" r="7" class="dot-shadow"/><circle cx="236" cy="32" r="6.5" class="dot-ink"/>
+          </g>
+          <path class="logo-underline" pathLength="1" d="M62 116 C130 106 230 108 330 102"/>
+          <path class="logo-underline two" pathLength="1" d="M150 124 C210 118 270 117 318 114"/>
         </svg>
-      </div>
-      <p class="tagline">Tu dessines comme un pied, tes potes devinent quand même.</p>
+      </h1>
+      <p class="tagline">Dessine, devine, marque des points. Entre potes, avec un simple code.</p>
     </header>
 
     <div class="home-grid">
-      <div class="poster home-card">
-        <label class="name-label" for="name">C'est quoi ton blaze ?</label>
-        <input id="name" class="name-input" maxlength="16" autocomplete="nickname" placeholder="Ton pseudo" spellcheck="false">
+      <div class="sheet profile-sheet">
+        <label class="field-title" for="name">Ton pseudo</label>
+        <div class="name-wrap">
+          <input id="name" class="name-input" maxlength="16" autocomplete="nickname" placeholder="Écris ton pseudo" spellcheck="false">
+          <svg class="name-scribble" viewBox="0 0 300 12" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 8 C60 3 120 10 180 6 S260 4 298 7"/></svg>
+        </div>
+
+        <div class="field-title">Ton perso</div>
         <div class="skin" id="home-editor"></div>
 
-        <button class="btn spray-pink big" id="btn-create" type="button">Créer une partie</button>
-        <form class="join-row" id="join-form">
-          <input id="join-code" class="code-input" maxlength="4" placeholder="CODE" autocapitalize="characters" spellcheck="false" autocomplete="off" aria-label="Code de la partie">
-          <button class="btn spray-cyan" id="btn-join" type="submit">Rejoindre</button>
-        </form>
-        <p class="error" id="home-error" role="alert"></p>
+        <div class="home-actions">
+          <button class="btn btn-primary btn-lg" id="btn-create" type="button"><span data-icon="play"></span>Créer une partie</button>
+          <form class="join-row" id="join-form">
+            <input id="join-code" class="code-input" maxlength="4" placeholder="CODE" autocapitalize="characters" spellcheck="false" autocomplete="off" aria-label="Code de la partie">
+            <button class="btn btn-dark" id="btn-join" type="submit">Rejoindre</button>
+          </form>
+          <p class="error" id="home-error" role="alert"></p>
+        </div>
       </div>
 
-      <aside class="sticker sticker-yellow hof-card">
-        <h2 class="scribble">Hall of fame</h2>
-        <div id="hof" class="hof"></div>
+      <aside class="side">
+        <section class="chalk-block">
+          <h2 class="chalk-title">Comment on joue</h2>
+          <ol class="steps">
+            <li><span class="step-n">1</span><p>Crée une partie et envoie le code à tes potes.</p></li>
+            <li><span class="step-n">2</span><p>À ton tour, choisis un mot parmi trois et dessine-le.</p></li>
+            <li><span class="step-n">3</span><p>Les autres devinent dans le chat. Plus on trouve vite, plus on marque.</p></li>
+          </ol>
+        </section>
+        <section class="chalk-block">
+          <h2 class="chalk-title"><span data-icon="trophy"></span>Hall of fame</h2>
+          <div id="hof" class="hof"></div>
+        </section>
       </aside>
     </div>
+
+    <footer class="foot">
+      <a href="charte.html">Charte graphique</a>
+      <span aria-hidden="true">/</span>
+      <span>Projet de conteneurisation, ESGI Reims</span>
+    </footer>
   </section>
 
-  <!-- SALON -->
+  <!-- ================= SALON ================= -->
   <section id="screen-lobby" class="screen" hidden>
-    <div class="lobby-top">
-      <div class="sticker sticker-yellow code-sticker">
+    <header class="bar">
+      <img class="bar-logo" src="logo.svg" alt="Gribouille">
+      <div class="code-box">
         <span class="code-label">Code de la partie</span>
-        <div class="code" id="lobby-code"></div>
+        <span class="code" id="lobby-code"></span>
       </div>
-      <div class="lobby-actions">
-        <button class="btn spray-cyan" id="btn-copy" type="button">Copier le lien d'invitation</button>
-        <button class="btn plain" id="btn-leave" type="button">Quitter</button>
+      <div class="bar-actions">
+        <button class="btn btn-primary" id="btn-copy" type="button"><span data-icon="link"></span>Copier le lien</button>
+        <button class="btn btn-ghost" id="btn-leave" type="button"><span data-icon="exit"></span>Quitter</button>
       </div>
-    </div>
+    </header>
 
     <div class="lobby-grid">
-      <div class="panel">
-        <h2 class="scribble">Le crew <span class="count" id="lobby-count"></span></h2>
+      <section class="sheet">
+        <h2 class="sheet-title">Joueurs <span class="count" id="lobby-count"></span></h2>
         <ul class="lobby-players" id="lobby-players"></ul>
-        <form class="rename" id="rename-form">
-          <label for="me-name">Ton pseudo</label>
-          <div class="rename-row">
-            <button type="button" class="avatar me-avatar" id="me-avatar" title="Modifier mon perso" aria-label="Modifier mon perso"></button>
-            <input id="me-name" maxlength="16" autocomplete="off" spellcheck="false">
-            <button class="btn plain small" type="submit">OK</button>
+        <form class="me-card" id="rename-form">
+          <button type="button" class="me-avatar" id="me-avatar" aria-label="Modifier mon perso"></button>
+          <div class="me-fields">
+            <label for="me-name">Ton pseudo</label>
+            <div class="me-row">
+              <input id="me-name" maxlength="16" autocomplete="off" spellcheck="false">
+              <button class="btn btn-soft btn-sm" type="submit">Renommer</button>
+            </div>
+            <button type="button" class="link-btn" id="btn-skin"><span data-icon="pencil"></span>Modifier mon perso</button>
           </div>
-          <button type="button" class="btn spray-yellow small skin-btn" id="btn-skin">Modifier mon perso</button>
         </form>
-      </div>
+      </section>
 
-      <div class="panel">
-        <h2 class="scribble">Les règles</h2>
+      <section class="sheet">
+        <h2 class="sheet-title">Règles de la partie</h2>
         <div class="settings">
           <label class="field"><span>Manches</span><select id="set-rounds"></select></label>
           <label class="field"><span>Temps par dessin</span><select id="set-time"></select></label>
           <label class="field"><span>Joueurs max</span><select id="set-max"></select></label>
-          <label class="toggle wide"><input type="checkbox" id="set-hints"><span>Dévoiler des lettres au fil du temps</span></label>
-          <label class="field wide"><span>Vos mots à vous <small>séparés par des virgules</small></span>
-            <textarea id="set-words" rows="3" placeholder="le prof de réseau, câble RJ45, la cafèt…"></textarea>
+          <label class="switch wide"><input type="checkbox" id="set-hints"><span class="track"></span><span>Dévoiler des lettres au fil du temps</span></label>
+          <label class="field wide"><span>Vos mots à vous <small>séparés par des virgules, cachés aux joueurs</small></span>
+            <textarea id="set-words" rows="3" placeholder="le prof de réseau, câble RJ45, la cafèt"></textarea>
           </label>
-          <label class="toggle wide"><input type="checkbox" id="set-custom-only"><span>Jouer uniquement avec nos mots</span></label>
+          <label class="switch wide"><input type="checkbox" id="set-custom-only"><span class="track"></span><span>Jouer uniquement avec nos mots</span></label>
         </div>
-        <p class="hint-text" id="settings-note"></p>
-        <button class="btn spray-pink big" id="btn-start" type="button">Lancer la partie</button>
-      </div>
+        <p class="note" id="settings-note"></p>
+        <button class="btn btn-primary btn-lg" id="btn-start" type="button"><span data-icon="play"></span>Lancer la partie</button>
+      </section>
 
-      <div class="panel chat-slot" id="lobby-chat-slot"></div>
+      <section class="sheet chat-slot" id="lobby-chat-slot"></section>
+
+      <section class="sheet gallery-sheet" id="lobby-gallery" hidden>
+        <h2 class="sheet-title"><span data-icon="gallery"></span>Les dessins de la dernière partie</h2>
+        <div class="gallery" id="gallery-lobby"></div>
+      </section>
     </div>
   </section>
 
-  <!-- JEU -->
+  <!-- ================= JEU ================= -->
   <section id="screen-game" class="screen" hidden>
     <div class="game">
-      <div class="topbar panel">
+      <header class="topbar">
         <div class="round" id="g-round"></div>
         <div class="hint-wrap">
           <div class="hint-label" id="g-hint-label"></div>
           <div class="hint" id="g-hint"></div>
         </div>
-        <div class="timer" id="g-timer"></div>
-      </div>
+        <div class="timer" id="g-timer">
+          <svg viewBox="0 0 60 60" aria-hidden="true">
+            <path class="timer-track" d="M30 6 C44 5 55 16 54 30 C54 44 43 55 30 54 C16 55 5 44 6 30 C6 16 17 5 30 6"/>
+            <path class="timer-ring" id="timer-ring" pathLength="1" d="M30 6 C44 5 55 16 54 30 C54 44 43 55 30 54 C16 55 5 44 6 30 C6 16 17 5 30 6"/>
+          </svg>
+          <span id="g-timer-n"></span>
+        </div>
+      </header>
 
-      <aside class="players panel">
+      <aside class="sheet players">
         <ul id="g-players"></ul>
-        <button class="btn plain small wide-btn" id="btn-leave-game" type="button">Quitter</button>
+        <button class="btn btn-soft btn-sm full" id="btn-leave-game" type="button"><span data-icon="exit"></span>Quitter</button>
       </aside>
 
       <main class="stage">
-        <div class="canvas-wrap">
+        <div class="canvas-wrap" id="canvas-wrap">
           <canvas id="canvas" width="800" height="600"></canvas>
           <div class="overlay" id="overlay" hidden></div>
+          <div class="burst" id="burst" aria-hidden="true"></div>
         </div>
         <div class="under">
-          <div class="toolbar panel" id="toolbar" hidden>
+          <div class="toolbar sheet" id="toolbar" hidden>
             <div class="palette" id="palette"></div>
             <div class="sizes" id="sizes"></div>
             <div class="tools">
-              <button type="button" class="tool" data-tool="pen" title="Pinceau (B)" aria-label="Pinceau">✏️</button>
-              <button type="button" class="tool" data-tool="fill" title="Pot de peinture (F)" aria-label="Pot de peinture">🪣</button>
-              <button type="button" class="tool" data-tool="eraser" title="Gomme (E)" aria-label="Gomme">🧽</button>
-              <button type="button" class="tool" id="t-undo" title="Annuler (Ctrl+Z)" aria-label="Annuler">↩️</button>
-              <button type="button" class="tool" id="t-clear" title="Tout effacer" aria-label="Tout effacer">🗑️</button>
+              <button type="button" class="tool" data-tool="pen" title="Crayon (B)" aria-label="Crayon"><span data-icon="pencil"></span></button>
+              <button type="button" class="tool" data-tool="fill" title="Pot de peinture (F)" aria-label="Pot de peinture"><span data-icon="bucket"></span></button>
+              <button type="button" class="tool" data-tool="eraser" title="Gomme (E)" aria-label="Gomme"><span data-icon="eraser"></span></button>
+              <span class="tool-sep" aria-hidden="true"></span>
+              <button type="button" class="tool" id="t-undo" title="Annuler (Ctrl+Z)" aria-label="Annuler"><span data-icon="undo"></span></button>
+              <button type="button" class="tool" id="t-clear" title="Tout effacer" aria-label="Tout effacer"><span data-icon="trash"></span></button>
             </div>
           </div>
-          <div class="react panel" id="react" hidden>
-            <span>Ce dessin&nbsp;?</span>
-            <button type="button" class="react-btn" id="r-up">👍 <span id="r-up-n">0</span></button>
-            <button type="button" class="react-btn" id="r-down">👎 <span id="r-down-n">0</span></button>
+          <div class="react sheet" id="react" hidden>
+            <span>Ce dessin</span>
+            <button type="button" class="react-btn" id="r-up" aria-label="J'aime"><span data-icon="thumbUp"></span><span id="r-up-n">0</span></button>
+            <button type="button" class="react-btn" id="r-down" aria-label="J'aime pas"><span data-icon="thumbDown"></span><span id="r-down-n">0</span></button>
           </div>
         </div>
       </main>
 
-      <aside class="panel chat-slot" id="game-chat-slot"></aside>
+      <aside class="sheet chat-slot" id="game-chat-slot"></aside>
     </div>
   </section>
 
@@ -151,24 +213,26 @@
   <div class="chat-panel" id="chat">
     <div class="chat-log" id="chat-log" aria-live="polite"></div>
     <form id="chat-form" class="chat-form">
-      <input id="chat-input" maxlength="100" autocomplete="off" placeholder="Écris un message…" aria-label="Message">
+      <span class="chat-lock" data-icon="lock" hidden id="chat-lock"></span>
+      <input id="chat-input" maxlength="100" autocomplete="off" placeholder="Écris un message" aria-label="Message">
     </form>
   </div>
 </div>
 
- <dialog class="skin-dialog" id="skin-dialog" aria-label="Modifier mon perso">
-  <h2 class="scribble">Ton perso</h2>
+<dialog class="sheet skin-dialog" id="skin-dialog" aria-label="Modifier mon perso">
+  <h2 class="sheet-title">Ton perso</h2>
   <div class="skin" id="dialog-editor"></div>
   <div class="dialog-actions">
-    <button type="button" class="btn plain" id="skin-cancel">Annuler</button>
-    <button type="button" class="btn spray-pink" id="skin-save">Valider</button>
+    <button type="button" class="btn btn-soft" id="skin-cancel">Annuler</button>
+    <button type="button" class="btn btn-primary" id="skin-save"><span data-icon="check"></span>Valider</button>
   </div>
 </dialog>
 
-<button class="mute" id="btn-mute" type="button" aria-label="Couper le son">🔊</button>
+<button class="mute" id="btn-mute" type="button" aria-label="Couper le son"></button>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="/socket.io/socket.io.min.js"></script>
+<script src="icons.js"></script>
 <script src="avatar.js"></script>
 <script src="app.js"></script>
 </body>

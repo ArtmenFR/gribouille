@@ -71,7 +71,7 @@ Annuler retire toutes les ops consécutives qui partagent le même identifiant d
 - Dessinateur : `50 + 50 × (temps restant / temps total)` par joueur qui trouve
 - Indices : jusqu'à 3 lettres dévoilées à 45 %, 65 % et 82 % du temps
 
-## Sécurité (c'est aussi un projet cyber 😉)
+## Sécurité
 
 **Anti-triche**
 - Le mot n'est envoyé qu'au dessinateur et à ceux qui l'ont trouvé : l'état est calculé **par joueur**, jamais diffusé tel quel. Inspecter le trafic WebSocket ne donne rien.

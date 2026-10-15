@@ -4,11 +4,11 @@
 // la limite correspondante dans server/src/game.js (AVATAR_LIMITS).
 (() => {
   'use strict';
-  const INK = '#141316';
+  const INK = '#1C1F1E';
   const S = `stroke="${INK}" stroke-linecap="round" stroke-linejoin="round"`;
 
   const SKINS = ['#ffe0bd', '#f5c58f', '#e0a36b', '#b97a4b', '#8a5532', '#5e3a22', '#a8f0c6', '#c9b6ff'];
-  const HOODIES = ['#ff3d8b', '#ffd60a', '#2ad4ff', '#8cf25b', '#ff8a1f', '#9b5cff', '#f6f4ee', '#3a3942', '#e63946', '#1f6feb', '#2ec4b6', '#ff9bd2'];
+  const HOODIES = ['#F5C431', '#F2665A', '#4C8DF6', '#3DBE7A', '#8E6CF0', '#FBFAF6', '#2A3833', '#F28AB2', '#FF9F43', '#2EC4B6', '#1C1F1E', '#B8C4CC'];
 
   const EYES = [
     // points
@@ -28,9 +28,9 @@
     // clin d'oeil
     `<circle cx="40" cy="44" r="3.6" fill="${INK}"/><path d="M54 45 Q60 39 66 45" fill="none" ${S} stroke-width="3"/>`,
     // coeurs
-    `<path d="M40 49 l-6 -6 a3.4 3.4 0 0 1 6 -4 a3.4 3.4 0 0 1 6 4z M60 49 l-6 -6 a3.4 3.4 0 0 1 6 -4 a3.4 3.4 0 0 1 6 4z" fill="#ff3d8b" ${S} stroke-width="1.8"/>`,
+    `<path d="M40 49 l-6 -6 a3.4 3.4 0 0 1 6 -4 a3.4 3.4 0 0 1 6 4z M60 49 l-6 -6 a3.4 3.4 0 0 1 6 -4 a3.4 3.4 0 0 1 6 4z" fill="#F2665A" ${S} stroke-width="1.8"/>`,
     // étoiles
-    `<path d="M40 37 l2 5 5 .4 -4 3.4 1.3 5 -4.3 -2.8 -4.3 2.8 1.3 -5 -4 -3.4 5 -.4z M60 37 l2 5 5 .4 -4 3.4 1.3 5 -4.3 -2.8 -4.3 2.8 1.3 -5 -4 -3.4 5 -.4z" fill="#ffd60a" ${S} stroke-width="1.6"/>`,
+    `<path d="M40 37 l2 5 5 .4 -4 3.4 1.3 5 -4.3 -2.8 -4.3 2.8 1.3 -5 -4 -3.4 5 -.4z M60 37 l2 5 5 .4 -4 3.4 1.3 5 -4.3 -2.8 -4.3 2.8 1.3 -5 -4 -3.4 5 -.4z" fill="#F5C431" ${S} stroke-width="1.6"/>`,
   ];
 
   const MOUTHS = [
@@ -43,7 +43,7 @@
     // bof
     `<path d="M42 59 h16" ${S} stroke-width="3"/>`,
     // langue
-    `<path d="M41 57 Q50 64 59 57" fill="none" ${S} stroke-width="3"/><path d="M47 61 q3 8 6 0" fill="#ff7aa8" ${S} stroke-width="2"/>`,
+    `<path d="M41 57 Q50 64 59 57" fill="none" ${S} stroke-width="3"/><path d="M47 61 q3 8 6 0" fill="#F28AB2" ${S} stroke-width="2"/>`,
     // en coin
     `<path d="M42 60 Q53 62 59 54" fill="none" ${S} stroke-width="3"/>`,
     // triste
@@ -60,23 +60,23 @@
     // rien
     '',
     // casquette
-    `<path d="M24 33 C24 18 36 12 50 12 C64 12 76 18 76 33 Z" fill="#ff3d8b" ${S} stroke-width="3"/><path d="M70 31 C80 29 91 31 93 36 C84 38 76 37 70 35 Z" fill="#ff3d8b" ${S} stroke-width="3"/><circle cx="50" cy="13" r="2.6" fill="${INK}"/>`,
+    `<path d="M24 33 C24 18 36 12 50 12 C64 12 76 18 76 33 Z" fill="#F2665A" ${S} stroke-width="3"/><path d="M70 31 C80 29 91 31 93 36 C84 38 76 37 70 35 Z" fill="#F2665A" ${S} stroke-width="3"/><circle cx="50" cy="13" r="2.6" fill="${INK}"/>`,
     // bonnet
-    `<path d="M23 33 C22 16 35 9 50 9 C65 9 78 16 77 33 Z" fill="#2ad4ff" ${S} stroke-width="3"/><rect x="20" y="27" width="60" height="10" rx="5" fill="#2ad4ff" ${S} stroke-width="3"/><circle cx="50" cy="8" r="5.5" fill="#ffd60a" ${S} stroke-width="2.6"/>`,
+    `<path d="M23 33 C22 16 35 9 50 9 C65 9 78 16 77 33 Z" fill="#4C8DF6" ${S} stroke-width="3"/><rect x="20" y="27" width="60" height="10" rx="5" fill="#4C8DF6" ${S} stroke-width="3"/><circle cx="50" cy="8" r="5.5" fill="#F5C431" ${S} stroke-width="2.6"/>`,
     // couronne
-    `<path d="M30 23 L33 6 L42 15 L50 3 L58 15 L67 6 L70 23 Z" fill="#ffd60a" ${S} stroke-width="3"/><circle cx="50" cy="17" r="2.6" fill="#ff3d8b"/>`,
+    `<path d="M30 23 L33 6 L42 15 L50 3 L58 15 L67 6 L70 23 Z" fill="#F5C431" ${S} stroke-width="3"/><circle cx="50" cy="17" r="2.6" fill="#F2665A"/>`,
     // casque audio
-    `<path d="M24 44 C24 12 76 12 76 44" fill="none" ${S} stroke-width="5"/><rect x="15" y="37" width="12" height="18" rx="5" fill="#9b5cff" ${S} stroke-width="3"/><rect x="73" y="37" width="12" height="18" rx="5" fill="#9b5cff" ${S} stroke-width="3"/>`,
+    `<path d="M24 44 C24 12 76 12 76 44" fill="none" ${S} stroke-width="5"/><rect x="15" y="37" width="12" height="18" rx="5" fill="#8E6CF0" ${S} stroke-width="3"/><rect x="73" y="37" width="12" height="18" rx="5" fill="#8E6CF0" ${S} stroke-width="3"/>`,
     // bandana
-    `<path d="M23 31 C30 19 70 19 77 31 L77 36 C65 31 35 31 23 36 Z" fill="#e63946" ${S} stroke-width="3"/><path d="M76 32 l11 -5 -3 10z" fill="#e63946" ${S} stroke-width="2.6"/><circle cx="40" cy="27" r="1.6" fill="#fff"/><circle cx="56" cy="26" r="1.6" fill="#fff"/>`,
+    `<path d="M23 31 C30 19 70 19 77 31 L77 36 C65 31 35 31 23 36 Z" fill="#E5484D" ${S} stroke-width="3"/><path d="M76 32 l11 -5 -3 10z" fill="#E5484D" ${S} stroke-width="2.6"/><circle cx="40" cy="27" r="1.6" fill="#fff"/><circle cx="56" cy="26" r="1.6" fill="#fff"/>`,
     // crête
-    `<path d="M39 22 L42 4 L47 17 L51 1 L55 17 L60 5 L62 22 Z" fill="#8cf25b" ${S} stroke-width="3"/>`,
+    `<path d="M39 22 L42 4 L47 17 L51 1 L55 17 L60 5 L62 22 Z" fill="#3DBE7A" ${S} stroke-width="3"/>`,
     // auréole
-    `<ellipse cx="50" cy="8" rx="17" ry="4.5" fill="none" stroke="${INK}" stroke-width="7"/><ellipse cx="50" cy="8" rx="17" ry="4.5" fill="none" stroke="#ffd60a" stroke-width="3.5"/>`,
+    `<ellipse cx="50" cy="8" rx="17" ry="4.5" fill="none" stroke="${INK}" stroke-width="7"/><ellipse cx="50" cy="8" rx="17" ry="4.5" fill="none" stroke="#F5C431" stroke-width="3.5"/>`,
     // cornes
-    `<path d="M31 25 C24 17 24 9 28 4 C30 12 34 16 39 19 Z M69 25 C76 17 76 9 72 4 C70 12 66 16 61 19 Z" fill="#e63946" ${S} stroke-width="2.6"/>`,
+    `<path d="M31 25 C24 17 24 9 28 4 C30 12 34 16 39 19 Z M69 25 C76 17 76 9 72 4 C70 12 66 16 61 19 Z" fill="#E5484D" ${S} stroke-width="2.6"/>`,
     // chapeau de fête
-    `<path d="M37 21 L50 1 L63 21 Z" fill="#2ad4ff" ${S} stroke-width="3"/><path d="M42 14 l12 3 M46 8 l7 2" ${S} stroke-width="2"/><circle cx="50" cy="2" r="3.4" fill="#ff3d8b" ${S} stroke-width="2"/>`,
+    `<path d="M37 21 L50 1 L63 21 Z" fill="#4C8DF6" ${S} stroke-width="3"/><path d="M42 14 l12 3 M46 8 l7 2" ${S} stroke-width="2"/><circle cx="50" cy="2" r="3.4" fill="#F2665A" ${S} stroke-width="2"/>`,
   ];
 
   const NAMES = {
@@ -110,7 +110,7 @@
       + `<path d="M11 101 C11 81 27 70 50 70 C73 70 89 81 89 101 Z" fill="${HOODIES[a.h]}" ${S} stroke-width="3.5"/>`
       + `<path d="M43 74 v12 M57 74 v12" ${S} stroke-width="2.4"/><circle cx="43" cy="88" r="2" fill="${INK}"/><circle cx="57" cy="88" r="2" fill="${INK}"/>`
       + `<path d="${head}" fill="${SKINS[a.s]}" ${S} stroke-width="3.5"/>`
-      + `<ellipse cx="33" cy="53" rx="4.5" ry="2.6" fill="#ff3d8b" opacity=".25"/><ellipse cx="67" cy="53" rx="4.5" ry="2.6" fill="#ff3d8b" opacity=".25"/>`
+      + `<ellipse cx="33" cy="53" rx="4.5" ry="2.6" fill="#F2665A" opacity=".25"/><ellipse cx="67" cy="53" rx="4.5" ry="2.6" fill="#F2665A" opacity=".25"/>`
       + EYES[a.e] + MOUTHS[a.m] + ACCESSORIES[a.a]
       + `</svg>`;
   }

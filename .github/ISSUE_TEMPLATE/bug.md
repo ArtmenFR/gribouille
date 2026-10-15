@@ -1,5 +1,5 @@
 ---
-name: 🐛 Bug
+name: Bug
 about: Quelque chose ne marche pas
 labels: bug
 ---

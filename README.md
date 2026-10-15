@@ -1,154 +1,134 @@
 <div align="center">
 
-# 🎨 Gribouille
+<img src="web/public/logo-ink.svg" alt="Gribouille" width="360">
 
-**Tague, devine, rigole.** Un jeu de dessin multijoueur entre potes, ambiance street, 100 % conteneurisé.
+**Dessine, devine, marque des points.** Un jeu de dessin multijoueur entre potes, entièrement conteneurisé.
 
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
-![Node](https://img.shields.io/badge/Node.js-20-339933?logo=nodedotjs&logoColor=white)
-![Socket.io](https://img.shields.io/badge/Socket.io-temps%20r%C3%A9el-010101?logo=socketdotio)
-![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
-![Licence](https://img.shields.io/badge/licence-MIT-green)
+Projet du cours de conteneurisation · B3 SRC · ESGI Reims
 
 <img src="docs/screenshots/accueil.png" alt="Écran d'accueil" width="820">
 
 </div>
 
----
+## Le jeu
 
-## ✨ Ce que fait le jeu
+Un joueur crée une partie et reçoit un code à 4 lettres, ou un lien à partager. Les autres rejoignent depuis un PC ou un téléphone. À chaque tour, un joueur choisit un mot parmi trois et le dessine. Les autres tapent leurs propositions dans le chat : plus on trouve vite, plus on marque.
 
-Un joueur crée une partie et reçoit un **code à 4 lettres** (ou un lien à partager). Les autres rejoignent avec ce code, depuis un PC ou un téléphone. À chaque tour, un joueur choisit un mot parmi trois et le dessine ; les autres tapent leurs propositions dans le chat. Plus on trouve vite, plus on marque.
+- **Ton pseudo et ton perso** : peau, sweat, yeux, bouche, accessoire, modifiables à tout moment dans le salon.
+- **Réponses proches gardées privées** : un « tu chauffes » n'est visible que par son auteur, pour ne pas souffler la réponse aux autres.
+- **Chat secret** entre le dessinateur et ceux qui ont déjà trouvé.
+- **Réponses tolérantes** : majuscules, accents, tirets et même « c'est un chat ? » sont acceptés.
+- **Mots perso cachés aux joueurs** : seul l'hôte les voit, avec l'option « uniquement nos mots ».
+- **Reconnexion automatique** : un rafraîchissement ou une coupure réseau ne fait pas perdre ses points.
+- **Outils de dessin** : crayon, gomme, pot de peinture, 4 épaisseurs, 16 couleurs et une couleur libre, annuler (Ctrl+Z).
+- **Fin de partie** : podium animé, galerie des dessins de la partie, bouton Rejouer, Hall of fame persistant.
+- **Zéro dépendance externe** côté navigateur : polices et icônes hébergées avec le jeu, CSP stricte. Ça marche en LAN sans internet.
 
-**Ce qu'on a en plus de skribbl.io :**
-
-- 🏷️ Ton pseudo et ton avatar (24 emojis × 12 couleurs), modifiables à tout moment dans le salon
-- 🔥 Les réponses « presque justes » ne sont visibles **que par leur auteur** (pas de réponse soufflée aux autres)
-- 🤫 Chat secret entre le dessinateur et ceux qui ont déjà trouvé
-- ✍️ Réponses tolérantes : majuscules, accents, tirets et même « c'est un chat ? » sont acceptés
-- 🧠 Mots perso **cachés aux joueurs** (seul l'hôte les voit), avec option « uniquement nos mots »
-- 🔄 Reconnexion automatique : un rafraîchissement ou une coupure réseau ne fait pas perdre ses points
-- 🪣 Pinceau, gomme, pot de peinture, 4 tailles, 16 couleurs, annuler (Ctrl+Z), raccourcis clavier
-- 🏆 Podium de fin de partie et **Hall of fame** persistant (Redis)
-- 👍 Réactions sur les dessins, sons générés sans fichiers
-- 🔒 Zéro dépendance externe côté navigateur : polices auto-hébergées, CSP stricte, ça marche même sans internet en LAN
-- 📱 Jouable au doigt sur mobile
-
-## 🚀 Lancer en 30 secondes
+## Lancer en 30 secondes
 
 Prérequis : Docker et Docker Compose.
 
 ```bash
-git clone <url-du-repo> gribouille
+git clone https://github.com/ArtmenFR/gribouille.git
 cd gribouille
 docker compose up -d --build
 ```
 
-Puis ouvre **http://localhost:8080**. Pour changer le port : `PORT=3000 docker compose up -d`.
+Puis ouvrir **http://localhost:8080**. Pour changer le port : `PORT=3000 docker compose up -d`.
 
-Raccourcis disponibles via le Makefile : `make up`, `make down`, `make logs`, `make test`, `make dev`.
+Le `Makefile` regroupe les commandes utiles : `make help` affiche la liste (`up`, `down`, `logs`, `test`, `dev`, et les démos pour la soutenance).
 
-## 🐳 Images Docker prêtes à l'emploi
-
-À chaque push sur `main`, la CI publie les images sur GitHub Container Registry (`ghcr.io/<owner>/gribouille-web` et `gribouille-server`). Sur n'importe quelle machine avec Docker, plus besoin de builder :
-
-```bash
-GH_OWNER=<pseudo-github> docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d --pull always --no-build
-```
-
-Après le premier push, passe les deux paquets en **Public** (GitHub, onglet *Packages*, *Package settings*) pour que tout le monde puisse les tirer sans se connecter.
-
-## 🌍 Jouer avec ses potes
+## Jouer avec ses potes
 
 | Situation | Comment faire |
 |---|---|
-| **Même Wi-Fi / même réseau** | Partage `http://<ton-IP-locale>:8080` (sur Linux : `hostname -I`) |
-| **À distance, sans rien configurer** | `cloudflared tunnel --url http://localhost:8080` ou `ngrok http 8080`, puis partage l'URL donnée |
-| **Réseau privé entre potes** | Tailscale ou ZeroTier : chacun rejoint le réseau et utilise ton IP Tailscale |
-| **Serveur maison / VPS** | Lance la stack dessus, ouvre le port (ou mets un reverse proxy HTTPS devant) |
+| Même Wi-Fi | Partager `http://<ton-IP-locale>:8080` (sur Linux : `hostname -I`) |
+| À distance, sans configuration | `cloudflared tunnel --url http://localhost:8080` puis partager l'URL donnée |
+| Réseau privé entre potes | Tailscale : chacun rejoint le réseau et utilise ton IP Tailscale |
+| Serveur maison ou VPS | Lancer la stack dessus et ouvrir le port, idéalement derrière un proxy HTTPS |
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-            Navigateurs (PC / mobile)
+            Navigateurs (PC, téléphone)
                      │  HTTP + WebSocket
                      ▼
         ┌────────────────────────────┐
-        │  web : nginx               │   ← seul conteneur exposé (port 8080)
-        │  front statique + reverse  │
-        │  proxy + en-têtes sécu/CSP │
+        │  web : nginx               │   seul conteneur exposé (port 8080)
+        │  front + reverse proxy     │
         └─────────────┬──────────────┘
           réseau front│
         ┌─────────────▼──────────────┐
-        │  server : Node + Socket.io │   ← logique du jeu, état des salons
-        │  non-root, read-only,      │
-        │  cap_drop ALL              │
+        │  server : Node + Socket.io │   logique du jeu
+        │  non-root, lecture seule   │
         └─────────────┬──────────────┘
-          réseau back │ (internal)
+          réseau back │ (interne)
         ┌─────────────▼──────────────┐
-        │  redis                     │   ← classement persistant (volume)
-        │  injoignable de l'extérieur│
+        │  redis                     │   classement persistant (volume)
         └────────────────────────────┘
 ```
 
-Plus de détails (protocole Socket.io, règles de score, choix de sécurité) dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Toutes les notions Docker utilisées (multi-stage, réseaux, volumes, healthchecks, durcissement, CI) sont expliquées dans **[`docs/CONTENEURISATION.md`](docs/CONTENEURISATION.md)**, avec le déroulé de démonstration pour la soutenance. Le fonctionnement du jeu (protocole, score, anti-triche) est dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-## 📁 Arborescence
+## Charte graphique
+
+L'identité visuelle complète (logo, couleurs, typographie, icônes, persos, composants, animations, ton) est consultable directement dans le jeu à l'adresse **`/charte.html`**, ou dans [`web/public/charte.html`](web/public/charte.html).
+
+## Arborescence
 
 ```
 gribouille/
-├── docker-compose.yml        # Stack de prod : web + server + redis
-├── docker-compose.dev.yml    # Surcharge dev : code monté, rechargement auto
-├── docker-compose.ghcr.yml   # Utiliser les images publiées par la CI
-├── Makefile                  # Raccourcis (up, down, logs, test, dev)
-├── .env.example              # Variables configurables
-├── server/                   # Serveur de jeu (Node.js)
-│   ├── Dockerfile
-│   ├── package.json
+├── docker-compose.yml        Stack de référence : web + server + redis
+├── docker-compose.dev.yml    Surcharge dev : code monté, rechargement auto
+├── docker-compose.ghcr.yml   Utiliser les images publiées par la CI
+├── Makefile                  Commandes et démos
+├── server/                   Serveur de jeu (Node.js)
+│   ├── Dockerfile            Image multi-stage, non-root
 │   ├── src/
-│   │   ├── index.js          # Point d'entrée HTTP + Socket.io
-│   │   ├── game.js           # Moteur : salons, tours, scores, anti-triche
-│   │   ├── store.js          # Classement Redis (optionnel)
-│   │   └── words.js          # Liste de mots
-│   └── test/                 # Tests unitaires + partie complète simulée
-├── web/                      # Front + reverse proxy
+│   │   ├── index.js          Point d'entrée HTTP + Socket.io
+│   │   ├── game.js           Salons, tours, scores, anti-triche
+│   │   ├── store.js          Classement Redis
+│   │   └── words.js          Liste de mots
+│   └── test/                 Tests unitaires et partie simulée
+├── web/                      Front + reverse proxy
 │   ├── Dockerfile
-│   ├── nginx.conf
-│   └── public/               # index.html, style.css, app.js, fonts/
+│   ├── nginx.conf            Proxy WebSocket, en-têtes de sécurité
+│   └── public/               Pages, styles, logo, icônes, persos, polices
 ├── docs/
-│   ├── ARCHITECTURE.md
+│   ├── CONTENEURISATION.md   Dossier technique du cours
+│   ├── ARCHITECTURE.md       Fonctionnement du jeu
 │   └── screenshots/
-└── .github/                  # CI, modèles d'issues et de PR
+└── .github/                  CI, modèles d'issues et de PR
 ```
 
-## 🧪 Tests
+## Tests
 
 ```bash
-cd server && npm install && npm test
+cd server && npm ci && npm test
 ```
 
-Les tests lancent un vrai serveur et de vrais clients Socket.io qui jouent une partie entière : création, code, choix du mot, dessin, devinettes, chat secret, reconnexion, exclusion. Ils vérifient aussi que **le mot ne fuite jamais** chez ceux qui doivent le deviner. La CI GitHub les relance à chaque push et build les images Docker.
+Les tests lancent un vrai serveur et de vrais clients Socket.io qui jouent une partie entière : création, code, choix du mot, dessin, devinettes, chat secret, reconnexion, changement de pseudo, exclusion. Ils vérifient aussi que le mot ne fuite jamais chez ceux qui doivent le deviner. La CI les relance à chaque push, construit les images et vérifie que la stack démarre.
 
-## 🛠️ Développer sans Docker
+## Développer sans Docker
 
 ```bash
 cd server
 npm install
-npm run dev          # http://localhost:3000, redémarre à chaque modif
+npm run dev          # http://localhost:3000, redémarre à chaque modification
 ```
 
-Sans `REDIS_URL`, le jeu marche normalement, seul le Hall of fame est désactivé.
+Sans `REDIS_URL`, le jeu fonctionne normalement, seul le Hall of fame est désactivé.
 
-## 🤝 Contribuer
+## Contribuer
 
-Les idées d'amélioration et la façon de travailler à plusieurs sont dans [`CONTRIBUTING.md`](CONTRIBUTING.md). En bref : une branche par fonctionnalité, une PR, les tests au vert.
+La méthode de travail à plusieurs et les idées d'amélioration sont dans [`CONTRIBUTING.md`](CONTRIBUTING.md) : une branche par fonctionnalité, une pull request, les tests au vert.
 
-## 📸 Captures
+## Captures
 
-| Salon | Le dessinateur | Podium (mobile) |
+| Salon | Le dessinateur | Fin de partie |
 |---|---|---|
-| ![](docs/screenshots/salon.png) | ![](docs/screenshots/jeu-dessinateur.png) | ![](docs/screenshots/podium-mobile.png) |
+| ![](docs/screenshots/salon.png) | ![](docs/screenshots/jeu-dessinateur.png) | ![](docs/screenshots/podium.png) |
 
-## 📄 Licence
+## Licence
 
 MIT, voir [`LICENSE`](LICENSE).

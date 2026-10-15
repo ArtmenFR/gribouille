@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 140" role="img" aria-label="Gribouille">
+  <title>Gribouille</title>
+  <!-- Logo dessiné à la main : chaque lettre est un tracé de marqueur.
+       Couche 1 = ombre jaune décalée, couche 2 = trait craie. -->
+  <defs>
+    <g id="letters" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M34 56 C28 48 10 48 9 64 C8 82 28 86 34 70"/>
+      <path d="M35 52 V108 C35 126 12 126 8 114"/>
+      <path d="M52 52 V90 M52 66 C56 54 66 50 76 54"/>
+      <path d="M90 54 V90"/>
+      <path d="M106 16 V90 M106 66 C108 50 134 48 136 66 C138 86 114 94 106 82"/>
+      <path d="M163 51 C145 50 143 90 161 90 C179 91 181 52 163 51"/>
+      <path d="M192 54 V74 C192 94 218 94 220 74 V54 V90"/>
+      <path d="M236 54 V90"/>
+      <path d="M252 14 V80 C252 92 260 93 266 88"/>
+      <path d="M276 14 V80 C276 92 284 93 290 88"/>
+      <path d="M300 72 L330 69 C330 50 302 46 299 66 C296 88 318 96 330 84"/>
+    </g>
+  </defs>
+  <use href="#letters" stroke="#F5C431" stroke-width="13" transform="translate(4 5)"/>
+  <use href="#letters" stroke="#EDEBE4" stroke-width="11"/>
+  <circle cx="94" cy="36" r="7" fill="#F5C431"/><circle cx="90" cy="32" r="6.5" fill="#EDEBE4"/>
+  <circle cx="240" cy="36" r="7" fill="#F5C431"/><circle cx="236" cy="32" r="6.5" fill="#EDEBE4"/>
+  <path d="M62 116 C130 106 230 108 330 102 M150 124 C210 118 270 117 318 114" fill="none" stroke="#F2665A" stroke-width="6" stroke-linecap="round"/>
+</svg>

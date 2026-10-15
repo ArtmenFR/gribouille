@@ -35,7 +35,7 @@ const io = new Server(server, {
 initStore(process.env.REDIS_URL);
 attach(io);
 
-server.listen(PORT, () => console.log(`🎨 Gribouille prêt sur le port ${PORT}`));
+server.listen(PORT, () => console.log(`Gribouille prêt sur le port ${PORT}`));
 
 const shutdown = () => {
   io.close();

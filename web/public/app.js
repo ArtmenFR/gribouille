@@ -1,13 +1,18 @@
+// Gribouille · client
+// Écrans : accueil → salon → jeu. Tout l'état vient du serveur via l'événement "state".
 (() => {
   'use strict';
 
-  // ---------- constantes ----------
   const AV = window.GribAvatar;
-  const PALETTE = ['#000000', '#495057', '#adb5bd', '#ffffff', '#e03131', '#f76707', '#f59f00', '#ffd43b',
-    '#2f9e44', '#8ce99a', '#1971c2', '#74c0fc', '#6741d9', '#da77f2', '#c2255c', '#8d5524'];
+  const IC = window.GribIcons;
+
+  // ---------- constantes ----------
+  const PALETTE = ['#1C1F1E', '#59605C', '#B8BDB9', '#FFFFFF', '#E5484D', '#F2665A', '#FF9F43', '#F5C431',
+    '#3DBE7A', '#2EC4B6', '#4C8DF6', '#1F4FA8', '#8E6CF0', '#F28AB2', '#8D5524', '#F1D3A8'];
   const SIZES = [4, 10, 20, 40];
   const W = 800;
   const H = 600;
+  const CHAT_ICONS = { success: 'check', 'success-me': 'check', close: 'flame', secret: 'lock', win: 'trophy', turn: 'pencil', join: 'user', leave: 'exit', reveal: 'eye' };
 
   // ---------- helpers ----------
   const $ = (s) => document.querySelector(s);
@@ -17,9 +22,14 @@
     if (text != null) e.textContent = text;
     return e;
   };
+  const iconEl = (name, cls = '') => {
+    const s = el('span', cls);
+    s.innerHTML = IC.svg(name); // icône prédéfinie, aucune donnée joueur
+    return s;
+  };
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* stockage indispo */ } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* stockage indisponible */ } },
   };
   const randToken = () => {
     const a = new Uint8Array(16);
@@ -31,16 +41,22 @@
     a.innerHTML = AV.svg(av); // SVG construit uniquement à partir de pièces prédéfinies
     return a;
   }
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   let toastTimer = null;
-  function toast(text, ms = 2200) {
+  function toast(text, { error = false, ms = 2400 } = {}) {
     const t = $('#toast');
-    t.textContent = text;
+    t.replaceChildren(iconEl(error ? 'close' : 'check'), el('span', null, text));
+    t.classList.toggle('err', error);
     t.hidden = false;
+    t.style.animation = 'none';
+    void t.offsetWidth;
+    t.style.animation = '';
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.hidden = true; }, ms);
   }
 
-  // ---------- sons (WebAudio, pas de fichiers) ----------
+  // ---------- sons (synthétisés, aucun fichier) ----------
   let muted = store.get('gb_muted', false);
   let actx = null;
   function tone(f, d, type = 'sine', v = 0.07, delay = 0) {
@@ -57,7 +73,7 @@
       o.connect(g).connect(actx.destination);
       o.start(t);
       o.stop(t + d);
-    } catch { /* audio indispo */ }
+    } catch { /* audio indisponible */ }
   }
   const sfx = {
     guess: () => { tone(660, 0.12); tone(880, 0.16, 'sine', 0.07, 0.1); },
@@ -66,10 +82,14 @@
     turn: () => { tone(440, 0.12); tone(660, 0.2, 'sine', 0.07, 0.12); },
     close: () => tone(300, 0.18, 'sawtooth', 0.035),
     end: () => { tone(520, 0.15, 'triangle'); tone(390, 0.25, 'triangle', 0.07, 0.14); },
+    pop: () => tone(740, 0.06, 'triangle', 0.05),
   };
-  function renderMute() { $('#btn-mute').textContent = muted ? '🔇' : '🔊'; }
+  function renderMute() {
+    const b = $('#btn-mute');
+    b.innerHTML = IC.svg(muted ? 'soundOff' : 'soundOn');
+    b.setAttribute('aria-label', muted ? 'Activer le son' : 'Couper le son');
+  }
   $('#btn-mute').addEventListener('click', () => { muted = !muted; store.set('gb_muted', muted); renderMute(); });
-  renderMute();
 
   // ---------- état local ----------
   let token = store.get('gb_token', null);
@@ -81,28 +101,45 @@
   let currentCode = (params.get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4) || null;
   if (currentCode && !profile.name) { $('#join-code').value = currentCode; currentCode = null; }
 
-  let S = null;            // dernier état reçu du serveur
-  let ops = [];            // historique du dessin du tour en cours
+  let S = null;              // dernier état reçu du serveur
+  let ops = [];              // historique du dessin du tour en cours
   let lastTurnId = null;
   let lastState = null;
+  let lastHint = '';
   let deadline = 0;
+  let turnTotal = 1;
   let lastSecond = null;
   let tool = 'pen';
-  let color = '#000000';
+  let color = '#1C1F1E';
   let size = 10;
   let strokeN = 0;
   let drawing = false;
   let lastPt = null;
   let strokeId = null;
+  let currentScreen = null;
+  const shownScores = new Map();   // pour animer les scores
+  const knownGuessed = new Set();  // pour faire clignoter ceux qui viennent de trouver
+  let gallery = store.get('gb_gallery', []);
 
   const socket = io({ transports: ['websocket', 'polling'] });
 
   // ---------- écrans ----------
   function showScreen(name) {
     for (const s of ['home', 'lobby', 'game']) $(`#screen-${s}`).hidden = s !== name;
+    if (currentScreen !== name) {
+      const sc = $(`#screen-${name}`);
+      sc.classList.remove('enter');
+      void sc.offsetWidth;
+      sc.classList.add('enter');
+      currentScreen = name;
+    }
     const slot = name === 'lobby' ? $('#lobby-chat-slot') : name === 'game' ? $('#game-chat-slot') : null;
     const chat = $('#chat');
-    if (slot && chat.parentElement !== slot) slot.append(chat);
+    if (slot && chat.parentElement !== slot) {
+      slot.append(chat);
+      const log = $('#chat-log');
+      log.scrollTop = log.scrollHeight;
+    }
     chat.hidden = !slot;
   }
 
@@ -113,16 +150,25 @@
     const controls = el('div', 'skin-controls');
     const parts = [['e', 'Yeux'], ['m', 'Bouche'], ['a', 'Accessoire']];
     const labels = {};
+    const wiggle = () => {
+      if (reduceMotion) return;
+      preview.classList.remove('wiggle');
+      void preview.offsetWidth;
+      preview.classList.add('wiggle');
+    };
     const change = (k, delta) => {
       const av = { ...get() };
       av[k] = (av[k] + delta + AV.LIMITS[k]) % AV.LIMITS[k];
       set(av);
       refresh();
+      wiggle();
     };
     for (const [k, label] of parts) {
       const row = el('div', 'skin-row');
-      const prev = el('button', 'arrow', '‹');
-      const next = el('button', 'arrow', '›');
+      const prev = el('button', 'arrow');
+      const next = el('button', 'arrow');
+      prev.innerHTML = IC.svg('undo').replace('M9 6.5L4.5 11 9 15.5M4.5 11H15a4.5 4.5 0 0 1 0 9h-3', 'M14.5 6l-6 6 6 6');
+      next.innerHTML = IC.svg('undo').replace('M9 6.5L4.5 11 9 15.5M4.5 11H15a4.5 4.5 0 0 1 0 9h-3', 'M9.5 6l6 6-6 6');
       prev.type = next.type = 'button';
       prev.setAttribute('aria-label', `${label} précédent`);
       next.setAttribute('aria-label', `${label} suivant`);
@@ -156,15 +202,10 @@
     };
     swatchRow('s', 'Peau', AV.SKINS);
     swatchRow('h', 'Sweat', AV.HOODIES);
-    const dice = el('button', 'btn plain small dice', '🎲 Au hasard');
+    const dice = el('button', 'btn btn-soft btn-sm dice');
     dice.type = 'button';
-    dice.addEventListener('click', () => {
-      set(AV.random());
-      refresh();
-      preview.classList.remove('wiggle');
-      void preview.offsetWidth;
-      preview.classList.add('wiggle');
-    });
+    dice.append(iconEl('dice'), el('span', null, 'Au hasard'));
+    dice.addEventListener('click', () => { set(AV.random()); refresh(); wiggle(); sfx.pop(); });
     controls.append(dice);
     root.replaceChildren(preview, controls);
     function refresh() {
@@ -188,9 +229,9 @@
 
   function enter(kind) {
     const name = $('#name').value.trim();
-    if (!name) { homeError('Choisis un pseudo 🙂'); $('#name').focus(); return; }
+    if (!name) { homeError('Choisis un pseudo pour commencer.'); $('#name').focus(); return; }
     const code = $('#join-code').value.trim();
-    if (kind === 'join' && code.length !== 4) { homeError('Le code fait 4 lettres.'); return; }
+    if (kind === 'join' && code.length !== 4) { homeError('Le code fait 4 lettres.'); $('#join-code').focus(); return; }
     profile.name = name;
     saveProfile();
     homeError('');
@@ -203,7 +244,7 @@
       if (!res || res.error) {
         currentCode = null;
         if (!silent || !S) { S = null; showScreen('home'); }
-        homeError(res?.error || 'Erreur de connexion.');
+        homeError(res?.error || 'Connexion impossible, réessaie.');
         window.history.replaceState(null, '', location.pathname);
         return;
       }
@@ -225,16 +266,15 @@
       const r = await fetch('/api/leaderboard');
       const data = await r.json();
       if (!data.available) { box.replaceChildren(el('p', 'muted', 'Classement indisponible pour le moment.')); return; }
-      if (!data.wins.length) { box.replaceChildren(el('p', 'muted', 'Aucune partie terminée. Sois le premier !')); return; }
-      const medals = ['🥇', '🥈', '🥉'];
-      const rows = data.wins.map((w, i) => {
+      if (!data.wins.length) { box.replaceChildren(el('p', 'muted', 'Aucune partie terminée. La première victoire est à prendre.')); return; }
+      const rows = data.wins.slice(0, 5).map((w, i) => {
         const row = el('div', 'hof-row');
-        row.append(el('span', 'rank', medals[i] ?? String(i + 1)), el('span', 'n', w.name), el('span', 'muted', `${w.score} victoire${w.score > 1 ? 's' : ''}`));
+        row.append(el('span', 'rank', String(i + 1)), el('span', 'n', w.name), el('span', 'w', `${w.score} victoire${w.score > 1 ? 's' : ''}`));
         return row;
       });
-      box.replaceChildren(...rows, el('p', 'muted small', `${data.games} partie${data.games > 1 ? 's' : ''} jouée${data.games > 1 ? 's' : ''} au total`));
+      box.replaceChildren(...rows, el('p', 'muted', `${data.games} partie${data.games > 1 ? 's' : ''} jouée${data.games > 1 ? 's' : ''} sur ce serveur`));
     } catch {
-      box.replaceChildren(el('p', 'muted', 'Classement indisponible.'));
+      box.replaceChildren(el('p', 'muted', 'Classement indisponible pour le moment.'));
     }
   }
 
@@ -254,12 +294,11 @@
   $('#set-custom-only').addEventListener('change', (e) => sendSettings({ customOnly: e.target.checked }));
   $('#set-words').addEventListener('change', (e) => sendSettings({ customWords: e.target.value }));
 
-  $('#btn-start').addEventListener('click', () => {
-    socket.emit('game:start', null, (res) => { if (res?.error) toast(res.error); });
-  });
+  const startGame = () => socket.emit('game:start', null, (res) => { if (res?.error) toast(res.error, { error: true }); });
+  $('#btn-start').addEventListener('click', startGame);
   $('#btn-copy').addEventListener('click', async () => {
     const url = `${location.origin}${location.pathname}?room=${S?.code}`;
-    try { await navigator.clipboard.writeText(url); toast('Lien copié ! Envoie-le à tes potes 🚀'); } catch { toast(url, 6000); }
+    try { await navigator.clipboard.writeText(url); toast('Lien copié, envoie-le à tes potes.'); } catch { toast(url, { ms: 6000 }); }
   });
   function leave() {
     socket.emit('room:leave');
@@ -274,10 +313,9 @@
   $('#btn-leave').addEventListener('click', leave);
   $('#btn-leave-game').addEventListener('click', () => { if (confirm('Quitter la partie ?')) leave(); });
 
-  // Changer de pseudo / d'avatar depuis le salon
   function updateProfile(patch, okMsg) {
     socket.emit('player:update', patch, (res) => {
-      if (res?.error) { toast(res.error); return; }
+      if (res?.error) { toast(res.error, { error: true }); return; }
       if (patch.name) { profile.name = res.name; $('#name').value = res.name; }
       if (patch.avatar) profile.avatar = patch.avatar;
       saveProfile();
@@ -287,13 +325,14 @@
   $('#rename-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const name = $('#me-name').value.trim();
-    if (!name) { toast('Le pseudo ne peut pas être vide.'); return; }
+    if (!name) { toast('Le pseudo ne peut pas être vide.', { error: true }); return; }
     if (name === meP()?.name) return;
-    updateProfile({ name }, `C'est noté, tu t'appelles ${name} !`);
+    updateProfile({ name }, `Pseudo changé : ${name}`);
     $('#me-name').blur();
   });
+
   // Éditeur de perso du salon (fenêtre)
-  let draftSkin = null;
+  let draftSkin = AV.normalize(profile.avatar);
   const lobbyEditor = skinEditor($('#dialog-editor'), () => draftSkin, (av) => { draftSkin = av; });
   const openSkin = () => {
     draftSkin = AV.normalize(meP()?.avatar ?? profile.avatar);
@@ -303,7 +342,7 @@
   $('#me-avatar').addEventListener('click', openSkin);
   $('#btn-skin').addEventListener('click', openSkin);
   $('#skin-save').addEventListener('click', () => {
-    updateProfile({ avatar: draftSkin }, 'Nouveau style validé !');
+    updateProfile({ avatar: draftSkin }, 'Perso mis à jour');
     $('#skin-dialog').close();
   });
   $('#skin-cancel').addEventListener('click', () => $('#skin-dialog').close());
@@ -321,16 +360,27 @@
     $('#lobby-count').textContent = `${online.length}/${S.settings.maxPlayers}`;
     const showScores = S.players.some((p) => p.score > 0);
     const list = [...S.players].sort((a, b) => (showScores ? b.score - a.score : 0));
-    $('#lobby-players').replaceChildren(...list.map((p) => {
+    const ul = $('#lobby-players');
+    const before = new Set([...ul.children].map((li) => li.dataset.id));
+    ul.replaceChildren(...list.map((p) => {
       const li = el('li', [p.id === S.me && 'me', !p.connected && 'off'].filter(Boolean).join(' '));
-      const n = el('span', 'n', p.name + (p.id === S.me ? ' (toi)' : ''));
+      li.dataset.id = p.id;
+      if (before.has(p.id)) li.style.animation = 'none';
+      const n = el('span', 'n', p.name);
+      if (p.id === S.me) n.append(el('span', 'you', ' (toi)'));
       li.append(avatarEl(p.avatar), n);
       if (showScores) li.append(el('span', 'pts', `${p.score} pts`));
-      if (p.id === S.hostId) li.append(el('span', null, '👑'));
+      if (p.id === S.hostId) {
+        const crown = iconEl('crown', 'host-badge');
+        crown.title = 'Hôte de la partie';
+        li.append(crown);
+      }
       if (isHost && p.id !== S.me) {
-        const k = el('button', 'kick', '✕');
+        const k = el('button', 'kick');
         k.type = 'button';
+        k.innerHTML = IC.svg('close');
         k.title = `Exclure ${p.name}`;
+        k.setAttribute('aria-label', `Exclure ${p.name}`);
         k.addEventListener('click', () => { if (confirm(`Exclure ${p.name} ?`)) socket.emit('room:kick', p.id); });
         li.append(k);
       }
@@ -353,18 +403,48 @@
     const ta = $('#set-words');
     if (isHost) {
       if (document.activeElement !== ta) ta.value = (st.customWords || []).join(', ');
-      ta.placeholder = 'le prof de réseau, câble RJ45, la cafèt…';
+      ta.placeholder = 'le prof de réseau, câble RJ45, la cafèt';
     } else {
       ta.value = '';
-      ta.placeholder = st.customCount ? `${st.customCount} mot${st.customCount > 1 ? 's' : ''} perso ajouté${st.customCount > 1 ? 's' : ''} par l'hôte (secret 🤫)` : 'Aucun mot perso';
+      ta.placeholder = st.customCount ? `${st.customCount} mot${st.customCount > 1 ? 's' : ''} ajouté${st.customCount > 1 ? 's' : ''} par l'hôte, gardés secrets` : 'Aucun mot ajouté';
     }
     const start = $('#btn-start');
     start.hidden = !isHost;
     start.disabled = online.length < 2;
     const host = S.players.find((p) => p.id === S.hostId);
     $('#settings-note').textContent = isHost
-      ? (online.length < 2 ? 'Il faut au moins 2 joueurs. Partage le code ou le lien !' : 'Tout le monde est là ? Lance la partie !')
-      : `En attente de ${host?.name ?? 'l\'hôte'} pour lancer la partie…`;
+      ? (online.length < 2 ? 'Il faut au moins 2 joueurs. Partage le code ou le lien.' : 'Tout le monde est là ? Lance la partie.')
+      : `En attente de ${host?.name ?? 'l\'hôte'} pour lancer la partie.`;
+    renderGallery();
+  }
+
+  // ---------- galerie ----------
+  function captureTurn() {
+    if (!S || !ops.length) return;
+    const drawer = S.players.find((p) => p.id === S.drawerId);
+    const c = document.createElement('canvas');
+    c.width = 240;
+    c.height = 180;
+    c.getContext('2d').drawImage(canvas, 0, 0, 240, 180);
+    gallery.push({ word: S.word, by: drawer?.name ?? '', av: drawer?.avatar, img: c.toDataURL('image/jpeg', 0.75) });
+    gallery = gallery.slice(-24);
+    store.set('gb_gallery', gallery);
+  }
+  function renderGallery() {
+    const show = gallery.length > 0;
+    $('#lobby-gallery').hidden = !show;
+    if (!show) return;
+    $('#gallery-lobby').replaceChildren(...gallery.map((g, i) => {
+      const f = el('figure', 'thumb');
+      f.style.animationDelay = `${i * 40}ms`;
+      const img = el('img');
+      img.src = g.img;
+      img.alt = `Dessin de ${g.by} : ${g.word ?? ''}`;
+      const cap = el('figcaption');
+      cap.append(el('span', 'w', g.word ?? '?'), el('span', 'by', g.by));
+      f.append(img, cap);
+      return f;
+    }));
   }
 
   // ---------- jeu ----------
@@ -378,89 +458,151 @@
     box.replaceChildren();
     if (S.state === 'choosing') {
       label.textContent = '';
-      box.append(el('span', 'muted', isDrawer() ? 'Choisis ton mot !' : 'Choix du mot…'));
+      box.append(el('span', null, isDrawer() ? 'Choisis ton mot' : 'Choix du mot'));
+      lastHint = '';
       return;
     }
-    if (S.state !== 'drawing' && S.state !== 'turnEnd') { label.textContent = ''; return; }
+    if (S.state !== 'drawing' && S.state !== 'turnEnd') { label.textContent = ''; lastHint = ''; return; }
     if (S.word) {
-      label.textContent = isDrawer() ? 'Ton mot à dessiner' : S.state === 'turnEnd' ? 'Le mot était' : 'Tu as trouvé';
+      label.textContent = isDrawer() ? 'Ton mot à dessiner' : S.state === 'turnEnd' ? 'Le mot était' : 'Bien trouvé';
       box.append(el('span', 'word', S.word));
+      lastHint = '';
       return;
     }
     label.textContent = 'Devine le mot';
     let letters = 0;
-    for (const ch of S.hint) {
-      if (ch === ' ') { box.append(el('span', 'gap')); continue; }
-      if (ch === '_') { box.append(el('span', 'ch blank', ' ')); letters++; continue; }
+    [...S.hint].forEach((ch, i) => {
+      if (ch === ' ') { box.append(el('span', 'gap')); return; }
+      if (ch === '_') { box.append(el('span', 'ch blank', ' ')); letters++; return; }
       if (/[\p{L}\p{N}]/u.test(ch)) letters++;
-      box.append(el('span', 'ch', ch));
-    }
-    box.append(el('span', 'count', `(${letters})`));
+      const isNew = lastHint && lastHint[i] === '_' && ch !== '_';
+      box.append(el('span', isNew ? 'ch pop' : 'ch', ch));
+    });
+    box.append(el('span', 'count', `${letters} lettres`));
+    lastHint = S.hint;
+  }
+
+  function animateScore(node, id, target) {
+    const from = shownScores.get(id) ?? target;
+    shownScores.set(id, target);
+    if (from === target || reduceMotion) { node.textContent = `${target} pts`; return; }
+    const t0 = performance.now();
+    const dur = 700;
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / dur);
+      const v = Math.round(from + (target - from) * (1 - (1 - k) ** 3));
+      node.textContent = `${v} pts`;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   }
 
   function renderPlayers() {
     const ranked = [...S.players].sort((a, b) => b.score - a.score);
     $('#g-players').replaceChildren(...ranked.map((p, i) => {
-      const cls = [p.id === S.me && 'me', p.guessed && 'guessed', p.id === S.drawerId && 'drawing', !p.connected && 'off'].filter(Boolean).join(' ');
-      const li = el('li', cls);
+      const cls = [p.id === S.me && 'me', p.guessed && 'guessed', p.id === S.drawerId && 'drawing', !p.connected && 'off'].filter(Boolean);
+      const justGuessed = p.guessed && !knownGuessed.has(p.id);
+      if (justGuessed) cls.push('flash');
+      const li = el('li', cls.join(' '));
       const info = el('div', 'info');
-      info.append(el('div', 'n', p.name + (p.id === S.me ? ' (toi)' : '')), el('div', 's', `${p.score} pts`));
-      li.append(el('span', 'rank', `#${i + 1}`), avatarEl(p.avatar), info);
-      if (p.id === S.drawerId) li.append(el('span', 'badge', '✏️'));
-      else if (p.guessed) li.append(el('span', 'badge', '✅'));
-      if (p.id === S.hostId) li.append(el('span', 'badge', '👑'));
+      const score = el('div', 's');
+      const name = el('div', 'n', p.name);
+      info.append(name, score);
+      animateScore(score, p.id, p.score);
+      const status = el('div', 'status');
+      if (p.id === S.drawerId) status.append(iconEl('pencil', 'st-draw'));
+      else if (p.guessed) status.append(iconEl('check', 'st-ok'));
+      if (p.id === S.hostId) status.append(iconEl('crown', 'st-host'));
+      li.append(el('span', 'rank', String(i + 1)), avatarEl(p.avatar), info, status);
       if (p.lastGain > 0 && (S.state === 'drawing' || S.state === 'turnEnd')) li.append(el('span', 'gain', `+${p.lastGain}`));
       return li;
     }));
+    knownGuessed.clear();
+    S.players.filter((p) => p.guessed).forEach((p) => knownGuessed.add(p.id));
   }
 
   function renderOverlay() {
     const ov = $('#overlay');
     const drawer = S.players.find((p) => p.id === S.drawerId);
+    const key = `${S.state}:${S.turnId}:${S.choices ? S.choices.join() : ''}:${S.state === 'turnEnd' ? S.players.map((p) => p.lastGain).join() : ''}`;
+    if (ov.dataset.key === key) return;
+    ov.dataset.key = key;
     ov.replaceChildren();
     if (S.state === 'choosing') {
       if (isDrawer() && S.choices) {
         const box = el('div', 'choices');
         S.choices.forEach((w, i) => {
-          const b = el('button', 'btn', w);
+          const b = el('button', 'choice', w);
           b.type = 'button';
           b.addEventListener('click', () => socket.emit('word:choose', i));
           box.append(b);
         });
-        ov.append(el('h3', null, 'À toi de dessiner ! Choisis un mot'), box);
+        ov.append(el('h3', null, 'À toi de dessiner'), el('p', 'sub', 'Choisis un mot'), box);
       } else {
-        ov.append(avatarEl(drawer?.avatar, 'big'), el('h3', null, `${drawer?.name ?? '…'} choisit un mot…`));
+        const w = el('div', 'waiting');
+        w.append(avatarEl(drawer?.avatar, 'big'));
+        ov.append(w, el('h3', null, `${drawer?.name ?? 'Quelqu\'un'} choisit un mot`));
       }
       ov.hidden = false;
     } else if (S.state === 'turnEnd') {
-      ov.append(el('div', null, S.word ? 'Le mot était' : 'Tour terminé'));
-      if (S.word) ov.append(el('div', 'big-word', S.word));
+      ov.append(el('p', 'sub', S.word ? 'Le mot était' : 'Tour terminé'));
+      if (S.word) {
+        const big = el('div', 'big-word');
+        [...S.word].forEach((ch, i) => {
+          const s = el('span', null, ch);
+          s.style.animationDelay = `${i * 45}ms`;
+          big.append(s);
+        });
+        ov.append(big);
+      }
       const gains = el('ul', 'gains');
-      [...S.players].sort((a, b) => b.lastGain - a.lastGain).forEach((p) => {
+      [...S.players].sort((a, b) => b.lastGain - a.lastGain).forEach((p, i) => {
         const li = el('li');
+        li.style.animationDelay = `${300 + i * 60}ms`;
         const who = el('span', 'gain-who');
         who.append(avatarEl(p.avatar, 'tiny'), el('span', null, p.name));
-        li.append(who, el('span', p.lastGain > 0 ? 'plus' : 'zero', p.lastGain > 0 ? `+${p.lastGain}` : '+0'));
+        li.append(who, el('span', p.lastGain > 0 ? 'plus' : 'zero', `+${p.lastGain}`));
         gains.append(li);
       });
       ov.append(gains);
       ov.hidden = false;
     } else if (S.state === 'gameOver' && S.podium) {
-      ov.append(el('h3', null, '🏆 Fin de la partie !'));
+      ov.append(el('h3', null, 'Fin de la partie'));
       const pod = el('div', 'podium');
-      const order = [1, 0, 2];
-      for (const idx of order) {
+      for (const idx of [1, 0, 2]) {
         const p = S.podium[idx];
         if (!p) continue;
         const step = el('div', `step p${idx + 1}`);
-        step.append(avatarEl(p.avatar, idx === 0 ? 'big' : 'mid'), el('div', 'pname', p.name), el('div', 'pscore', `${p.score} pts`), el('div', 'block', String(idx + 1)));
+        const crown = el('div', 'crown');
+        if (idx === 0) crown.innerHTML = IC.svg('crown');
+        step.append(crown, avatarEl(p.avatar, idx === 0 ? 'big' : 'mid'), el('div', 'pname', p.name), el('div', 'pscore', `${p.score} pts`), el('div', 'block', String(idx + 1)));
         pod.append(step);
       }
       ov.append(pod);
-      if (S.podium.length > 3) {
-        ov.append(el('div', 'muted', S.podium.slice(3).map((p, i) => `${i + 4}. ${p.name} (${p.score})`).join('   ')));
+      const thisGame = gallery.slice(-Math.max(0, S.round * (S.podium.length || 1)));
+      if (thisGame.length) {
+        const g = el('div', 'over-gallery');
+        thisGame.slice(-8).forEach((t, i) => {
+          const img = el('img');
+          img.src = t.img;
+          img.alt = t.word ?? '';
+          img.title = `${t.word} · ${t.by}`;
+          img.style.animationDelay = `${900 + i * 60}ms`;
+          g.append(img);
+        });
+        ov.append(g);
       }
-      ov.append(el('div', 'muted small', 'Retour au salon dans quelques secondes…'));
+      if (S.me === S.hostId) {
+        const again = el('button', 'btn btn-primary');
+        again.type = 'button';
+        again.append(iconEl('replay'), el('span', null, 'Rejouer'));
+        again.addEventListener('click', startGame);
+        const acts = el('div', 'over-actions');
+        acts.append(again);
+        ov.append(acts);
+      } else {
+        ov.append(el('p', 'sub', 'Retour au salon dans quelques secondes'));
+      }
       ov.hidden = false;
     } else {
       ov.hidden = true;
@@ -476,21 +618,28 @@
   }
 
   function renderGame() {
-    $('#g-round').textContent = S.round ? `Manche ${Math.min(S.round, S.settings.rounds)} / ${S.settings.rounds}` : '';
+    const r = $('#g-round');
+    r.replaceChildren();
+    if (S.round) {
+      r.append('Manche ', el('b', null, String(Math.min(S.round, S.settings.rounds))), ` sur ${S.settings.rounds}`);
+    }
     renderHint();
     renderPlayers();
     renderOverlay();
     const drawingNow = canDraw();
     $('#toolbar').hidden = !drawingNow;
-    $('#react').hidden = !(S.state === 'drawing');
+    $('#react').hidden = S.state !== 'drawing';
     $('#r-up').disabled = $('#r-down').disabled = isDrawer();
     renderReactions();
     canvas.classList.toggle('can-draw', drawingNow && tool !== 'fill');
     canvas.classList.toggle('can-fill', drawingNow && tool === 'fill');
     const me = meP();
-    $('#chat-input').placeholder = S.state === 'drawing'
-      ? (isDrawer() || me?.guessed ? '🤫 Message secret (seuls ceux qui ont trouvé le voient)' : 'Tape ta réponse…')
-      : 'Écris un message…';
+    const secret = S.state === 'drawing' && (isDrawer() || me?.guessed);
+    $('#chat-form').classList.toggle('secret', Boolean(secret));
+    $('#chat-lock').hidden = !secret;
+    $('#chat-input').placeholder = secret
+      ? 'Message secret, visible par ceux qui ont trouvé'
+      : S.state === 'drawing' ? 'Tape ta réponse' : 'Écris un message';
   }
 
   function render() {
@@ -502,25 +651,59 @@
       if (S.state === 'choosing' && isDrawer()) sfx.turn();
     }
     if (lastState !== S.state) {
-      if (S.state === 'turnEnd') sfx.end();
+      if (S.state === 'turnEnd') { captureTurn(); sfx.end(); }
       if (S.state === 'gameOver') sfx.win();
+      if (S.state === 'choosing' && (lastState === 'lobby' || lastState === 'gameOver' || lastState === null) && S.round === 1) {
+        gallery = [];
+        store.set('gb_gallery', gallery);
+        shownScores.clear();
+      }
       lastState = S.state;
     }
     deadline = Date.now() + S.timeLeft;
+    turnTotal = S.state === 'drawing' ? S.settings.drawTime * 1000 : S.state === 'choosing' ? 15000 : S.state === 'turnEnd' ? 6000 : 15000;
     if (S.state === 'lobby') { showScreen('lobby'); renderLobby(); } else { showScreen('game'); renderGame(); }
   }
 
   // ---------- chrono ----------
   setInterval(() => {
     if (!S || S.state === 'lobby') return;
-    const secs = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    const left = Math.max(0, deadline - Date.now());
+    const secs = Math.ceil(left / 1000);
+    $('#g-timer-n').textContent = String(secs);
+    $('#timer-ring').style.strokeDashoffset = String(1 - Math.min(1, left / turnTotal));
     const t = $('#g-timer');
-    t.textContent = String(secs);
     const urgent = S.state === 'drawing' && secs <= 10;
     t.classList.toggle('urgent', urgent);
-    if (urgent && secs !== lastSecond && secs > 0) sfx.tick();
+    if (urgent && secs !== lastSecond && secs > 0) {
+      sfx.tick();
+      t.classList.remove('tick');
+      void t.offsetWidth;
+      t.classList.add('tick');
+    }
     lastSecond = secs;
   }, 200);
+
+  // ---------- gerbe de craie ----------
+  function burst() {
+    if (reduceMotion) return;
+    const box = $('#burst');
+    const colors = ['#F5C431', '#3DBE7A', '#4C8DF6', '#F2665A', '#8E6CF0', '#FBFAF6'];
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 26; i++) {
+      const p = el('i');
+      const a = (Math.PI * 2 * i) / 26 + Math.random() * 0.4;
+      const d = 120 + Math.random() * 160;
+      p.style.setProperty('--dx', `${Math.cos(a) * d}px`);
+      p.style.setProperty('--dy', `${Math.sin(a) * d}px`);
+      p.style.setProperty('--rot', `${Math.random() * 540 - 270}deg`);
+      p.style.background = colors[i % colors.length];
+      p.style.animationDelay = `${Math.random() * 80}ms`;
+      frag.append(p);
+    }
+    box.replaceChildren(frag);
+    setTimeout(() => box.replaceChildren(), 1200);
+  }
 
   // ---------- canvas ----------
   const canvas = $('#canvas');
@@ -555,7 +738,7 @@
   }
   function redraw() { wipe(); for (const op of ops) applyOp(op); }
 
-  // Remplissage "pot de peinture" par balayage de lignes
+  // Remplissage « pot de peinture » par balayage de lignes
   function floodFill(x, y, hex) {
     if (x < 0 || y < 0 || x >= W || y >= H) return;
     const img = ctx.getImageData(0, 0, W, H);
@@ -601,6 +784,7 @@
   }
   const newSid = () => `${S.me}-${++strokeN}`;
   const curColor = () => (tool === 'eraser' ? '#ffffff' : color);
+  const curSize = () => (tool === 'eraser' ? Math.max(size, 20) : size);
   function send(op) { ops.push(op); applyOp(op); socket.emit('draw', op); }
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -612,7 +796,7 @@
     drawing = true;
     strokeId = newSid();
     lastPt = [x, y];
-    send({ t: 'l', s: strokeId, c: curColor(), w: tool === 'eraser' ? Math.max(size, 20) : size, p: [x, y, x, y] });
+    send({ t: 'l', s: strokeId, c: curColor(), w: curSize(), p: [x, y, x, y] });
   });
   canvas.addEventListener('pointermove', (e) => {
     if (!drawing || !canDraw()) return;
@@ -620,7 +804,7 @@
     for (const ev of events.length ? events : [e]) {
       const [x, y] = toCanvas(ev);
       if (Math.hypot(x - lastPt[0], y - lastPt[1]) < 2) continue;
-      send({ t: 'l', s: strokeId, c: curColor(), w: tool === 'eraser' ? Math.max(size, 20) : size, p: [lastPt[0], lastPt[1], x, y] });
+      send({ t: 'l', s: strokeId, c: curColor(), w: curSize(), p: [lastPt[0], lastPt[1], x, y] });
       lastPt = [x, y];
     }
   });
@@ -629,7 +813,7 @@
   canvas.addEventListener('pointercancel', stop);
 
   // ---------- barre d'outils ----------
-  $('#palette').replaceChildren(...PALETTE.map((c) => {
+  const swatches = PALETTE.map((c) => {
     const b = el('button', 'color');
     b.type = 'button';
     b.style.background = c;
@@ -637,14 +821,23 @@
     b.setAttribute('aria-label', `Couleur ${c}`);
     b.addEventListener('click', () => { color = c; if (tool === 'eraser') tool = 'pen'; renderTools(); });
     return b;
-  }));
+  });
+  const custom = el('label', 'color color-custom');
+  custom.title = 'Couleur libre';
+  const picker = el('input');
+  picker.type = 'color';
+  picker.value = '#8E6CF0';
+  picker.setAttribute('aria-label', 'Choisir une couleur libre');
+  picker.addEventListener('input', () => { color = picker.value; if (tool === 'eraser') tool = 'pen'; renderTools(); });
+  custom.append(picker);
+  $('#palette').replaceChildren(...swatches.slice(0, 8), custom, ...swatches.slice(8));
   $('#sizes').replaceChildren(...SIZES.map((s) => {
     const b = el('button', 'size');
     b.type = 'button';
     b.dataset.size = s;
-    b.setAttribute('aria-label', `Taille ${s}`);
+    b.setAttribute('aria-label', `Épaisseur ${s}`);
     const dot = el('i');
-    const px = Math.max(4, Math.min(26, s * 0.6));
+    const px = Math.max(4, Math.min(24, s * 0.6));
     dot.style.width = dot.style.height = `${px}px`;
     b.append(dot);
     b.addEventListener('click', () => { size = s; renderTools(); });
@@ -654,7 +847,8 @@
   $('#t-undo').addEventListener('click', () => socket.emit('draw:undo'));
   $('#t-clear').addEventListener('click', () => { if (canDraw()) send({ t: 'c', s: newSid() }); });
   function renderTools() {
-    document.querySelectorAll('.color').forEach((b) => b.classList.toggle('active', b.dataset.color === color && tool !== 'eraser'));
+    document.querySelectorAll('.color[data-color]').forEach((b) => b.classList.toggle('active', b.dataset.color === color && tool !== 'eraser'));
+    custom.classList.toggle('active', !PALETTE.includes(color) && tool !== 'eraser');
     document.querySelectorAll('.size').forEach((b) => b.classList.toggle('active', Number(b.dataset.size) === size));
     document.querySelectorAll('.tool[data-tool]').forEach((b) => b.classList.toggle('active', b.dataset.tool === tool));
     if (S && S.state !== 'lobby') {
@@ -662,7 +856,6 @@
       canvas.classList.toggle('can-fill', canDraw() && tool === 'fill');
     }
   }
-  renderTools();
 
   document.addEventListener('keydown', (e) => {
     if (!canDraw()) return;
@@ -683,18 +876,19 @@
   // ---------- chat ----------
   function addChat(m) {
     const log = $('#chat-log');
-    const line = el('div', `msg ${m.kind || 'chat'}`);
-    if (m.from) {
-      line.append(el('span', 'who', `${m.from.name} :`), document.createTextNode(m.text));
-    } else {
-      line.textContent = m.text;
-    }
+    const kind = m.kind || 'chat';
+    const line = el('div', `msg ${kind}`);
+    if (CHAT_ICONS[kind]) line.append(iconEl(CHAT_ICONS[kind]));
+    const txt = el('span', 'txt');
+    if (m.from) txt.append(el('span', 'who', `${m.from.name} `), document.createTextNode(m.text));
+    else txt.textContent = m.text;
+    line.append(txt);
     const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 60;
     log.append(line);
     while (log.children.length > 250) log.firstChild.remove();
     if (atBottom) log.scrollTop = log.scrollHeight;
-    if (m.kind === 'success-me') sfx.win();
-    if (m.kind === 'close') sfx.close();
+    if (kind === 'success-me') { sfx.win(); burst(); }
+    if (kind === 'close') sfx.close();
   }
   $('#chat-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -709,7 +903,7 @@
   socket.on('connect', () => {
     if (currentCode && profile.name) joinRoom('join', currentCode, true);
   });
-  socket.on('disconnect', () => { if (S) toast('Connexion perdue, reconnexion…', 4000); });
+  socket.on('disconnect', () => { if (S) toast('Connexion perdue, reconnexion en cours', { error: true, ms: 4000 }); });
   socket.on('state', (st) => { S = st; currentCode = st.code; render(); });
   socket.on('history', (h) => { ops = Array.isArray(h) ? h : []; redraw(); });
   socket.on('draw', (op) => { ops.push(op); applyOp(op); });
@@ -729,8 +923,11 @@
   });
 
   // ---------- démarrage ----------
+  IC.hydrate();
+  renderMute();
+  renderTools();
   showScreen('home');
   wipe();
   loadHof();
-  if (!currentCode) ($('#join-code').value ? $('#name') : $('#name')).focus();
+  if (!currentCode && !profile.name) $('#name').focus();
 })();
