@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gribouille</title>
+  <meta name="description" content="Dessine, devine, rigole. Un jeu de dessin multijoueur entre potes.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ACCUEIL -->
+  <section id="screen-home" class="screen">
+    <header class="brand">
+      <h1 class="logo">Gribouille<span class="dot">.</span></h1>
+      <p class="tagline">Dessine, devine, rigole. Entre potes, avec un simple code.</p>
+    </header>
+    <div class="home-grid">
+      <div class="card home-card">
+        <div class="avatar-picker">
+          <button class="icon-btn" id="av-prev" type="button" aria-label="Avatar précédent">‹</button>
+          <div class="avatar big" id="av-preview"></div>
+          <button class="icon-btn" id="av-next" type="button" aria-label="Avatar suivant">›</button>
+        </div>
+        <div class="swatches" id="av-colors" role="radiogroup" aria-label="Couleur de l'avatar"></div>
+        <label class="field">
+          <span>Pseudo</span>
+          <input id="name" maxlength="16" autocomplete="nickname" placeholder="Ton pseudo">
+        </label>
+        <button class="btn primary big" id="btn-create" type="button">Créer une partie</button>
+        <div class="sep"><span>ou rejoins tes potes</span></div>
+        <form class="join-row" id="join-form">
+          <input id="join-code" maxlength="4" placeholder="CODE" autocapitalize="characters" spellcheck="false" autocomplete="off" aria-label="Code de la partie">
+          <button class="btn" id="btn-join" type="submit">Rejoindre</button>
+        </form>
+        <p class="error" id="home-error" role="alert"></p>
+      </div>
+      <div class="card hof-card">
+        <h2>🏆 Hall of fame</h2>
+        <div id="hof" class="hof"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SALON -->
+  <section id="screen-lobby" class="screen" hidden>
+    <div class="lobby-top card">
+      <div>
+        <span class="muted">Code de la partie</span>
+        <div class="code" id="lobby-code"></div>
+      </div>
+      <div class="lobby-actions">
+        <button class="btn" id="btn-copy" type="button">🔗 Copier le lien</button>
+        <button class="btn ghost" id="btn-leave" type="button">Quitter</button>
+      </div>
+    </div>
+    <div class="lobby-grid">
+      <div class="card">
+        <h2>Joueurs <span class="muted" id="lobby-count"></span></h2>
+        <ul class="lobby-players" id="lobby-players"></ul>
+      </div>
+      <div class="card">
+        <h2>Réglages</h2>
+        <div class="settings">
+          <label class="field"><span>Manches</span><select id="set-rounds"></select></label>
+          <label class="field"><span>Temps pour dessiner</span><select id="set-time"></select></label>
+          <label class="field"><span>Joueurs max</span><select id="set-max"></select></label>
+          <label class="toggle wide"><input type="checkbox" id="set-hints"><span>Indices (lettres dévoilées au fil du temps)</span></label>
+          <label class="field wide"><span>Mots perso <small class="muted">séparés par des virgules</small></span>
+            <textarea id="set-words" rows="3" placeholder="le prof de réseau, câble RJ45, la cafèt…"></textarea>
+          </label>
+          <label class="toggle wide"><input type="checkbox" id="set-custom-only"><span>Uniquement nos mots perso</span></label>
+        </div>
+        <p class="muted small" id="settings-note"></p>
+        <button class="btn primary big" id="btn-start" type="button">Lancer la partie</button>
+      </div>
+      <div class="card chat-slot" id="lobby-chat-slot"></div>
+    </div>
+  </section>
+
+  <!-- JEU -->
+  <section id="screen-game" class="screen" hidden>
+    <div class="game">
+      <div class="topbar card">
+        <div class="round" id="g-round"></div>
+        <div class="hint-wrap">
+          <div class="hint-label" id="g-hint-label"></div>
+          <div class="hint" id="g-hint"></div>
+        </div>
+        <div class="timer" id="g-timer"></div>
+      </div>
+      <aside class="players card">
+        <ul id="g-players"></ul>
+        <button class="btn ghost small-btn" id="btn-leave-game" type="button">Quitter</button>
+      </aside>
+      <main class="stage">
+        <div class="canvas-wrap card">
+          <canvas id="canvas" width="800" height="600"></canvas>
+          <div class="overlay" id="overlay" hidden></div>
+        </div>
+        <div class="under">
+          <div class="toolbar card" id="toolbar" hidden>
+            <div class="palette" id="palette"></div>
+            <div class="sizes" id="sizes"></div>
+            <div class="tools">
+              <button type="button" class="tool" data-tool="pen" title="Pinceau (B)">✏️</button>
+              <button type="button" class="tool" data-tool="fill" title="Pot de peinture (F)">🪣</button>
+              <button type="button" class="tool" data-tool="eraser" title="Gomme (E)">🧽</button>
+              <button type="button" class="tool" id="t-undo" title="Annuler (Ctrl+Z)">↩️</button>
+              <button type="button" class="tool" id="t-clear" title="Tout effacer">🗑️</button>
+            </div>
+          </div>
+          <div class="react card" id="react" hidden>
+            <span class="muted">Ce dessin&nbsp;?</span>
+            <button type="button" class="react-btn" id="r-up">👍 <span id="r-up-n">0</span></button>
+            <button type="button" class="react-btn" id="r-down">👎 <span id="r-down-n">0</span></button>
+          </div>
+        </div>
+      </main>
+      <aside class="card chat-slot" id="game-chat-slot"></aside>
+    </div>
+  </section>
+
+  <!-- Chat partagé, déplacé entre le salon et le jeu -->
+  <div class="chat-panel" id="chat">
+    <div class="chat-log" id="chat-log" aria-live="polite"></div>
+    <form id="chat-form" class="chat-form">
+      <input id="chat-input" maxlength="100" autocomplete="off" placeholder="Écris un message…" aria-label="Message">
+    </form>
+  </div>
+</div>
+
+<button class="mute" id="btn-mute" type="button" aria-label="Couper le son">🔊</button>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="/socket.io/socket.io.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

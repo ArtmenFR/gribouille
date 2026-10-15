@@ -1,0 +1,24 @@
+{
+  "name": "gribouille-server",
+  "version": "1.0.0",
+  "description": "Serveur temps réel du jeu Gribouille (Node.js + Socket.io)",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "STATIC_DIR=../web/public node --watch src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "redis": "^4.7.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}

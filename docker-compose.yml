@@ -1,0 +1,56 @@
+# Gribouille — jeu de dessin multijoueur
+# Lancer :  docker compose up -d --build
+# Ouvrir :  http://localhost:8080
+
+name: gribouille
+
+services:
+  # Reverse proxy + front statique : seul service exposé à l'extérieur
+  web:
+    build: ./web
+    ports:
+      - "${PORT:-8080}:80"
+    depends_on:
+      server:
+        condition: service_healthy
+    networks: [front]
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+
+  # Serveur de jeu temps réel (Node.js + Socket.io)
+  server:
+    build: ./server
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [front, back]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  # Classement global persistant
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redis-data:/data
+    networks: [back]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    security_opt: ["no-new-privileges:true"]
+
+networks:
+  front:
+  back:
+    internal: true   # Redis n'est joignable que par le serveur, jamais depuis l'extérieur
+
+volumes:
+  redis-data:

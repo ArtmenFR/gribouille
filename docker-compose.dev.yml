@@ -1,0 +1,14 @@
+# Surcharge pour le développement :
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Le code est monté dans les conteneurs : modifie un fichier, recharge la page.
+
+services:
+  web:
+    volumes:
+      - ./web/public:/usr/share/nginx/html:ro
+
+  server:
+    command: ["node", "--watch", "src/index.js"]
+    read_only: false
+    volumes:
+      - ./server/src:/app/src:ro
