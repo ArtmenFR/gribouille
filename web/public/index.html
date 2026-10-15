@@ -16,22 +16,27 @@
   <!-- ACCUEIL -->
   <section id="screen-home" class="screen">
     <header class="brand">
-      <h1 class="logo">Gribouille</h1>
+      <div class="logo-wrap">
+        <h1 class="logo">Gribouille</h1>
+        <svg class="logo-pencil" viewBox="0 0 60 200" aria-hidden="true">
+          <g stroke="#141316" stroke-width="4" stroke-linejoin="round">
+            <rect x="12" y="8" width="36" height="22" rx="8" fill="#ff9bd2"/>
+            <rect x="10" y="28" width="40" height="16" fill="#c9c7cf"/>
+            <path d="M10 44 h40 v104 h-40z" fill="#ffd60a"/>
+            <path d="M23 44 v104 M37 44 v104" fill="none" stroke-width="2.5"/>
+            <path d="M10 148 h40 l-20 44z" fill="#f2c48d"/>
+            <path d="M23 177 l7 15 7 -15z" fill="#141316"/>
+          </g>
+        </svg>
+      </div>
       <p class="tagline">Tu dessines comme un pied, tes potes devinent quand même.</p>
     </header>
 
     <div class="home-grid">
       <div class="poster home-card">
         <label class="name-label" for="name">C'est quoi ton blaze ?</label>
-        <div class="identity">
-          <div class="avatar huge" id="av-preview" aria-hidden="true"></div>
-          <input id="name" class="name-input" maxlength="16" autocomplete="nickname" placeholder="Ton pseudo" spellcheck="false">
-        </div>
-
-        <div class="picker">
-          <div class="av-grid" id="av-grid" role="radiogroup" aria-label="Choisis ton avatar"></div>
-          <div class="swatches" id="av-colors" role="radiogroup" aria-label="Couleur de fond de l'avatar"></div>
-        </div>
+        <input id="name" class="name-input" maxlength="16" autocomplete="nickname" placeholder="Ton pseudo" spellcheck="false">
+        <div class="skin" id="home-editor"></div>
 
         <button class="btn spray-pink big" id="btn-create" type="button">Créer une partie</button>
         <form class="join-row" id="join-form">
@@ -68,11 +73,11 @@
         <form class="rename" id="rename-form">
           <label for="me-name">Ton pseudo</label>
           <div class="rename-row">
-            <button type="button" class="avatar" id="me-avatar" title="Changer d'avatar"></button>
+            <button type="button" class="avatar me-avatar" id="me-avatar" title="Modifier mon perso" aria-label="Modifier mon perso"></button>
             <input id="me-name" maxlength="16" autocomplete="off" spellcheck="false">
             <button class="btn plain small" type="submit">OK</button>
           </div>
-          <p class="hint-text">Touche ton avatar pour en changer.</p>
+          <button type="button" class="btn spray-yellow small skin-btn" id="btn-skin">Modifier mon perso</button>
         </form>
       </div>
 
@@ -151,10 +156,20 @@
   </div>
 </div>
 
+ <dialog class="skin-dialog" id="skin-dialog" aria-label="Modifier mon perso">
+  <h2 class="scribble">Ton perso</h2>
+  <div class="skin" id="dialog-editor"></div>
+  <div class="dialog-actions">
+    <button type="button" class="btn plain" id="skin-cancel">Annuler</button>
+    <button type="button" class="btn spray-pink" id="skin-save">Valider</button>
+  </div>
+</dialog>
+
 <button class="mute" id="btn-mute" type="button" aria-label="Couper le son">🔊</button>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="/socket.io/socket.io.min.js"></script>
+<script src="avatar.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

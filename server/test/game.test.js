@@ -54,7 +54,7 @@ test('une partie complète : créer, rejoindre, dessiner, deviner', async () => 
   const carl = await connect();
 
   // Création et arrivée des joueurs avec le code
-  const created = await call(alice, 'room:create', { name: 'Alice', avatar: { e: 1, c: 2 }, token: 'a'.repeat(32) });
+  const created = await call(alice, 'room:create', { name: 'Alice', avatar: { s: 1, h: 2, e: 3, m: 4, a: 5 }, token: 'a'.repeat(32) });
   assert.ok(created.ok);
   assert.match(created.code, /^[A-Z]{4}$/);
   assert.ok((await call(bob, 'room:join', { name: 'Bob', code: created.code, token: 'b'.repeat(32) })).ok);
@@ -175,9 +175,9 @@ test('on peut changer de pseudo et d\'avatar dans le salon', async () => {
   await call(b, 'room:join', { name: 'Lucas', code: r.code, token: 'q'.repeat(32) });
   await until(() => last(a)?.players.length === 2);
   assert.match((await call(b, 'player:update', { name: 'maxime' })).error, /déjà pris/);
-  assert.ok((await call(b, 'player:update', { name: '  Lulu 🦊 ', avatar: { e: 5, c: 3 } })).ok);
+  assert.ok((await call(b, 'player:update', { name: '  Lulu 🦊 ', avatar: { s: 2, h: 11, e: 9, m: 99, a: 'x' } })).ok);
   await until(() => last(a).players.some((p) => p.name === 'Lulu 🦊'));
-  assert.deepEqual(last(a).players.find((p) => p.name === 'Lulu 🦊').avatar, { e: 5, c: 3 });
+  assert.deepEqual(last(a).players.find((p) => p.name === 'Lulu 🦊').avatar, { s: 2, h: 11, e: 9, m: 9, a: 0 }, 'pièces hors limites ramenées à une valeur sûre');
   assert.ok(a.chats.some((m) => m.text === 'Lucas s\'appelle maintenant Lulu 🦊'));
   assert.ok((await call(b, 'player:update', { name: '' })).error);
 });

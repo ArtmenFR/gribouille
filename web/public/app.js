@@ -2,8 +2,7 @@
   'use strict';
 
   // ---------- constantes ----------
-  const AVATARS = ['🐱', '🐶', '🦊', '🐼', '🐸', '🐵', '🦁', '🐯', '🐨', '🐷', '🐙', '🦄', '🐧', '🦉', '🐢', '🐳', '🦖', '👾', '🤖', '👻', '🎃', '🍕', '🌵', '⭐'];
-  const AV_COLORS = ['#ffd43b', '#ff8787', '#ffa94d', '#69db7c', '#63e6be', '#74c0fc', '#91a7ff', '#b197fc', '#f783ac', '#c0eb75', '#e9ecef', '#ffc9c9'];
+  const AV = window.GribAvatar;
   const PALETTE = ['#000000', '#495057', '#adb5bd', '#ffffff', '#e03131', '#f76707', '#f59f00', '#ffd43b',
     '#2f9e44', '#8ce99a', '#1971c2', '#74c0fc', '#6741d9', '#da77f2', '#c2255c', '#8d5524'];
   const SIZES = [4, 10, 20, 40];
@@ -27,9 +26,9 @@
     crypto.getRandomValues(a);
     return Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
   };
-  function avatarEl(av, big) {
-    const a = el('div', big ? 'avatar big' : 'avatar', AVATARS[av?.e] ?? AVATARS[0]);
-    a.style.setProperty('--av', AV_COLORS[av?.c] ?? AV_COLORS[0]);
+  function avatarEl(av, size) {
+    const a = el('div', `avatar ${size || ''}`.trim());
+    a.innerHTML = AV.svg(av); // SVG construit uniquement à partir de pièces prédéfinies
     return a;
   }
   let toastTimer = null;
@@ -75,7 +74,8 @@
   // ---------- état local ----------
   let token = store.get('gb_token', null);
   if (typeof token !== 'string' || token.length < 16) { token = randToken(); store.set('gb_token', token); }
-  const profile = store.get('gb_profile', { name: '', avatar: { e: Math.floor(Math.random() * AVATARS.length), c: Math.floor(Math.random() * AV_COLORS.length) } });
+  const profile = store.get('gb_profile', { name: '', avatar: AV.random() });
+  profile.avatar = AV.normalize(profile.avatar);
 
   const params = new URLSearchParams(location.search);
   let currentCode = (params.get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4) || null;
@@ -106,34 +106,80 @@
     chat.hidden = !slot;
   }
 
-  // ---------- accueil ----------
-  function renderAvatarPicker() {
-    const prev = $('#av-preview');
-    prev.textContent = AVATARS[profile.avatar.e];
-    prev.style.setProperty('--av', AV_COLORS[profile.avatar.c]);
-    const sw = $('#av-colors');
-    sw.replaceChildren(...AV_COLORS.map((c, i) => {
-      const b = el('button', 'swatch');
-      b.type = 'button';
-      b.style.background = c;
-      b.setAttribute('role', 'radio');
-      b.setAttribute('aria-checked', String(i === profile.avatar.c));
-      b.setAttribute('aria-label', `Couleur ${i + 1}`);
-      b.addEventListener('click', () => { profile.avatar.c = i; saveProfile(); renderAvatarPicker(); });
-      return b;
-    }));
-    document.querySelectorAll('.av-opt').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.i) === profile.avatar.e)));
+  // ---------- éditeur de perso ----------
+  // Monte un éditeur dans `root`. get() renvoie l'avatar courant, set(av) l'applique.
+  function skinEditor(root, get, set) {
+    const preview = el('div', 'skin-preview');
+    const controls = el('div', 'skin-controls');
+    const parts = [['e', 'Yeux'], ['m', 'Bouche'], ['a', 'Accessoire']];
+    const labels = {};
+    const change = (k, delta) => {
+      const av = { ...get() };
+      av[k] = (av[k] + delta + AV.LIMITS[k]) % AV.LIMITS[k];
+      set(av);
+      refresh();
+    };
+    for (const [k, label] of parts) {
+      const row = el('div', 'skin-row');
+      const prev = el('button', 'arrow', '‹');
+      const next = el('button', 'arrow', '›');
+      prev.type = next.type = 'button';
+      prev.setAttribute('aria-label', `${label} précédent`);
+      next.setAttribute('aria-label', `${label} suivant`);
+      prev.addEventListener('click', () => change(k, -1));
+      next.addEventListener('click', () => change(k, 1));
+      labels[k] = el('span', 'part-name');
+      const mid = el('div', 'part');
+      mid.append(el('span', 'part-label', label), labels[k]);
+      row.append(prev, mid, next);
+      controls.append(row);
+    }
+    const swatchRow = (k, label, colors) => {
+      const row = el('div', 'skin-swatches');
+      row.append(el('span', 'part-label', label));
+      const box = el('div', 'swatches');
+      box.setAttribute('role', 'radiogroup');
+      box.setAttribute('aria-label', label);
+      colors.forEach((c, i) => {
+        const b = el('button', 'swatch');
+        b.type = 'button';
+        b.style.background = c;
+        b.dataset.k = k;
+        b.dataset.i = i;
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-label', `${label} ${i + 1}`);
+        b.addEventListener('click', () => { set({ ...get(), [k]: i }); refresh(); });
+        box.append(b);
+      });
+      row.append(box);
+      controls.append(row);
+    };
+    swatchRow('s', 'Peau', AV.SKINS);
+    swatchRow('h', 'Sweat', AV.HOODIES);
+    const dice = el('button', 'btn plain small dice', '🎲 Au hasard');
+    dice.type = 'button';
+    dice.addEventListener('click', () => {
+      set(AV.random());
+      refresh();
+      preview.classList.remove('wiggle');
+      void preview.offsetWidth;
+      preview.classList.add('wiggle');
+    });
+    controls.append(dice);
+    root.replaceChildren(preview, controls);
+    function refresh() {
+      const av = AV.normalize(get());
+      preview.innerHTML = AV.svg(av);
+      for (const [k] of parts) labels[k].textContent = AV.NAMES[k][av[k]];
+      root.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-checked', String(av[b.dataset.k] === Number(b.dataset.i))));
+    }
+    refresh();
+    return { refresh };
   }
+
+  // ---------- accueil ----------
   function saveProfile() { store.set('gb_profile', profile); }
-  $('#av-grid').replaceChildren(...AVATARS.map((emo, i) => {
-    const b = el('button', 'av-opt', emo);
-    b.type = 'button';
-    b.dataset.i = i;
-    b.setAttribute('role', 'radio');
-    b.setAttribute('aria-label', `Avatar ${emo}`);
-    b.addEventListener('click', () => { profile.avatar.e = i; saveProfile(); renderAvatarPicker(); });
-    return b;
-  }));
+  skinEditor($('#home-editor'), () => profile.avatar, (av) => { profile.avatar = av; saveProfile(); });
   $('#name').value = profile.name || '';
   $('#name').addEventListener('input', (e) => { profile.name = e.target.value.trim(); saveProfile(); });
   $('#join-code').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); });
@@ -246,16 +292,21 @@
     updateProfile({ name }, `C'est noté, tu t'appelles ${name} !`);
     $('#me-name').blur();
   });
-  $('#me-avatar').addEventListener('click', () => {
-    const cur = meP()?.avatar ?? profile.avatar;
-    const next = { e: (cur.e + 1) % AVATARS.length, c: (cur.c + (cur.e + 1 === AVATARS.length ? 1 : 0)) % AV_COLORS.length };
-    updateProfile({ avatar: next });
+  // Éditeur de perso du salon (fenêtre)
+  let draftSkin = null;
+  const lobbyEditor = skinEditor($('#dialog-editor'), () => draftSkin, (av) => { draftSkin = av; });
+  const openSkin = () => {
+    draftSkin = AV.normalize(meP()?.avatar ?? profile.avatar);
+    lobbyEditor.refresh();
+    $('#skin-dialog').showModal();
+  };
+  $('#me-avatar').addEventListener('click', openSkin);
+  $('#btn-skin').addEventListener('click', openSkin);
+  $('#skin-save').addEventListener('click', () => {
+    updateProfile({ avatar: draftSkin }, 'Nouveau style validé !');
+    $('#skin-dialog').close();
   });
-  $('#me-avatar').addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    const cur = meP()?.avatar ?? profile.avatar;
-    updateProfile({ avatar: { e: cur.e, c: (cur.c + 1) % AV_COLORS.length } });
-  });
+  $('#skin-cancel').addEventListener('click', () => $('#skin-dialog').close());
 
   function setSelect(sel, v) {
     const s = $(sel);
@@ -289,9 +340,7 @@
     const mine = meP();
     if (mine) {
       if (document.activeElement !== $('#me-name')) $('#me-name').value = mine.name;
-      const ma = $('#me-avatar');
-      ma.textContent = AVATARS[mine.avatar.e];
-      ma.style.setProperty('--av', AV_COLORS[mine.avatar.c]);
+      $('#me-avatar').innerHTML = AV.svg(mine.avatar);
     }
 
     const st = S.settings;
@@ -380,7 +429,7 @@
         });
         ov.append(el('h3', null, 'À toi de dessiner ! Choisis un mot'), box);
       } else {
-        ov.append(avatarEl(drawer?.avatar, true), el('h3', null, `${drawer?.name ?? '…'} choisit un mot…`));
+        ov.append(avatarEl(drawer?.avatar, 'big'), el('h3', null, `${drawer?.name ?? '…'} choisit un mot…`));
       }
       ov.hidden = false;
     } else if (S.state === 'turnEnd') {
@@ -389,7 +438,9 @@
       const gains = el('ul', 'gains');
       [...S.players].sort((a, b) => b.lastGain - a.lastGain).forEach((p) => {
         const li = el('li');
-        li.append(el('span', null, `${AVATARS[p.avatar.e]} ${p.name}`), el('span', p.lastGain > 0 ? 'plus' : 'zero', p.lastGain > 0 ? `+${p.lastGain}` : '+0'));
+        const who = el('span', 'gain-who');
+        who.append(avatarEl(p.avatar, 'tiny'), el('span', null, p.name));
+        li.append(who, el('span', p.lastGain > 0 ? 'plus' : 'zero', p.lastGain > 0 ? `+${p.lastGain}` : '+0'));
         gains.append(li);
       });
       ov.append(gains);
@@ -402,7 +453,7 @@
         const p = S.podium[idx];
         if (!p) continue;
         const step = el('div', `step p${idx + 1}`);
-        step.append(avatarEl(p.avatar, idx === 0), el('div', 'pname', p.name), el('div', 'pscore', `${p.score} pts`), el('div', 'block', String(idx + 1)));
+        step.append(avatarEl(p.avatar, idx === 0 ? 'big' : 'mid'), el('div', 'pname', p.name), el('div', 'pscore', `${p.score} pts`), el('div', 'block', String(idx + 1)));
         pod.append(step);
       }
       ov.append(pod);
@@ -634,7 +685,7 @@
     const log = $('#chat-log');
     const line = el('div', `msg ${m.kind || 'chat'}`);
     if (m.from) {
-      line.append(el('span', 'who', `${AVATARS[m.from.avatar?.e] ?? ''} ${m.from.name}`), document.createTextNode(m.text));
+      line.append(el('span', 'who', `${m.from.name} :`), document.createTextNode(m.text));
     } else {
       line.textContent = m.text;
     }
@@ -678,7 +729,6 @@
   });
 
   // ---------- démarrage ----------
-  renderAvatarPicker();
   showScreen('home');
   wipe();
   loadHof();

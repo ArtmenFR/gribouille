@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420">
+  <!-- Gribouillis à la craie sur le mur. Motif répété en fond. -->
+  <g fill="none" stroke="#ffffff" stroke-opacity=".085" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- étoile -->
+    <path d="M40 22 l9 19 21 3 -15 14 4 21 -19 -10 -19 10 4 -21 -15 -14 21 -3z"/>
+    <!-- couronne -->
+    <path d="M118 74 l6 -34 16 18 13 -26 13 26 16 -18 6 34z M118 84 h70"/>
+    <!-- bombe de peinture -->
+    <path d="M250 34 h26 v58 q0 6 -6 6 h-14 q-6 0 -6 -6z M255 34 v-9 h16 v9 M263 25 v-7 h8 M283 14 l8 -4 M285 22 h10 M283 30 l8 4 M250 52 h26"/>
+    <!-- éclair -->
+    <path d="M352 24 l-22 40 h18 l-14 38 34 -50 h-19 l16 -28z"/>
+    <!-- smiley -->
+    <circle cx="62" cy="168" r="30"/><path d="M50 160 v2 M74 160 v2 M47 177 q15 14 30 0"/>
+    <!-- coeur -->
+    <path d="M168 196 l-26 -26 a14 14 0 0 1 26 -16 a14 14 0 0 1 26 16z"/>
+    <!-- spirale -->
+    <path d="M262 160 c0 -6 10 -6 10 2 c0 10 -18 10 -18 -2 c0 -16 26 -16 26 2 c0 20 -34 20 -34 -2"/>
+    <!-- flèche -->
+    <path d="M318 196 c20 -30 40 -38 70 -36 M374 148 l16 12 -14 14"/>
+    <!-- crayon -->
+    <path d="M30 296 l70 -70 16 16 -70 70 -22 6z M88 238 l16 16 M30 296 l16 16"/>
+    <!-- nuage -->
+    <path d="M150 300 h66 a16 16 0 0 0 0 -32 a22 22 0 0 0 -40 -10 a18 18 0 0 0 -26 42z"/>
+    <!-- note de musique -->
+    <path d="M268 306 v-56 l36 -10 v52 M268 262 l36 -10"/><ellipse cx="260" cy="306" rx="9" ry="7"/><ellipse cx="296" cy="292" rx="9" ry="7"/>
+    <!-- planète -->
+    <circle cx="370" cy="290" r="20"/><path d="M340 300 c-14 10 4 14 30 4 c26 -10 44 -24 30 -26"/>
+    <!-- fantôme -->
+    <path d="M30 404 v-36 a24 24 0 0 1 48 0 v36 l-8 -8 -8 8 -8 -8 -8 8 -8 -8z M46 366 v2 M62 366 v2"/>
+    <!-- sucette -->
+    <circle cx="146" cy="358" r="18"/><path d="M146 358 c0 -8 10 -8 10 0 c0 12 -20 12 -20 0 M146 376 v40"/>
+    <!-- X et petits traits -->
+    <path d="M218 364 l20 20 M238 364 l-20 20 M300 360 l6 -14 M316 366 l14 -6 M312 382 l14 6"/>
+    <!-- oeil -->
+    <path d="M352 384 q26 -26 52 0 q-26 26 -52 0z"/><circle cx="378" cy="384" r="7"/>
+    <!-- petits points -->
+    <path d="M212 112 v1 M228 128 v1 M96 112 v1 M396 230 v1 M210 236 v1"/>
+  </g>
+</svg>

@@ -14,8 +14,8 @@ const EMPTY_ROOM_MS = 120_000;
 const MAX_HISTORY = 40_000;
 const CANVAS_W = 800;
 const CANVAS_H = 600;
-const AVATAR_COUNT = 24;
-const COLOR_COUNT = 12;
+// Nombre de pièces par partie du perso (doit correspondre à web/public/avatar.js)
+export const AVATAR_LIMITS = { s: 8, h: 12, e: 10, m: 10, a: 10 };
 const HINT_THRESHOLDS = [0.45, 0.65, 0.82];
 
 const rooms = new Map();
@@ -26,6 +26,12 @@ const clampInt = (v, min, max, def) => {
   const n = Number.parseInt(v, 10);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
 };
+export function normalizeAvatar(av, fallback = { s: 0, h: 0, e: 0, m: 0, a: 0 }) {
+  const src = av && typeof av === 'object' ? av : {};
+  const out = {};
+  for (const [k, n] of Object.entries(AVATAR_LIMITS)) out[k] = clampInt(src[k], 0, n - 1, fallback[k] ?? 0);
+  return out;
+}
 const isLetter = (ch) => /[\p{L}\p{N}]/u.test(ch);
 
 export function cleanText(s, max) {
@@ -220,7 +226,7 @@ class Room {
   addPlayer(socket, data) {
     const token = typeof data.token === 'string' && /^[\w-]{16,64}$/.test(data.token) ? data.token : null;
     if (token && this.kicked.has(token)) return { error: 'Tu as été exclu de cette partie.' };
-    const avatar = { e: clampInt(data.avatar?.e, 0, AVATAR_COUNT - 1, 0), c: clampInt(data.avatar?.c, 0, COLOR_COUNT - 1, 0) };
+    const avatar = normalizeAvatar(data.avatar);
     let name = cleanText(data.name, 16);
 
     let p = token ? [...this.players.values()].find((q) => q.token === token) : null;
@@ -304,7 +310,7 @@ class Room {
   updateProfile(p, data) {
     let changed = false;
     if (data.avatar && typeof data.avatar === 'object') {
-      p.avatar = { e: clampInt(data.avatar.e, 0, AVATAR_COUNT - 1, p.avatar.e), c: clampInt(data.avatar.c, 0, COLOR_COUNT - 1, p.avatar.c) };
+      p.avatar = normalizeAvatar(data.avatar, p.avatar);
       changed = true;
     }
     if ('name' in data) {
