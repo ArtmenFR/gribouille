@@ -35,6 +35,9 @@ jobs:
           curl -fsS http://localhost:8080/ | grep -q Gribouille
           curl -fsS http://localhost:8080/api/health
           curl -fsS http://localhost:8080/api/leaderboard
+          curl -fsS -o /dev/null http://localhost:8080/socket.io/socket.io.min.js
+          curl -fsS -o /dev/null http://localhost:8080/app.js
+          curl -fsS "http://localhost:8080/socket.io/?EIO=4&transport=polling" | grep -q sid
       - name: Logs en cas d'échec
         if: failure()
         run: docker compose logs
