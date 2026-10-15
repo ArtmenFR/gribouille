@@ -5,10 +5,10 @@
 services:
   web:
     volumes:
-      - ./web/public:/usr/share/nginx/html:ro
+      - ./web/public:/usr/share/nginx/html:ro,z
 
   server:
     command: ["node", "--watch", "src/index.js"]
     read_only: false
     volumes:
-      - ./server/src:/app/src:ro
+      - ./server/src:/app/src:ro,z
