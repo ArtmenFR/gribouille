@@ -122,11 +122,20 @@
       b.addEventListener('click', () => { profile.avatar.c = i; saveProfile(); renderAvatarPicker(); });
       return b;
     }));
+    document.querySelectorAll('.av-opt').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.i) === profile.avatar.e)));
   }
   function saveProfile() { store.set('gb_profile', profile); }
-  $('#av-prev').addEventListener('click', () => { profile.avatar.e = (profile.avatar.e + AVATARS.length - 1) % AVATARS.length; saveProfile(); renderAvatarPicker(); });
-  $('#av-next').addEventListener('click', () => { profile.avatar.e = (profile.avatar.e + 1) % AVATARS.length; saveProfile(); renderAvatarPicker(); });
+  $('#av-grid').replaceChildren(...AVATARS.map((emo, i) => {
+    const b = el('button', 'av-opt', emo);
+    b.type = 'button';
+    b.dataset.i = i;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-label', `Avatar ${emo}`);
+    b.addEventListener('click', () => { profile.avatar.e = i; saveProfile(); renderAvatarPicker(); });
+    return b;
+  }));
   $('#name').value = profile.name || '';
+  $('#name').addEventListener('input', (e) => { profile.name = e.target.value.trim(); saveProfile(); });
   $('#join-code').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); });
 
   function homeError(msg) { $('#home-error').textContent = msg || ''; }
@@ -219,6 +228,35 @@
   $('#btn-leave').addEventListener('click', leave);
   $('#btn-leave-game').addEventListener('click', () => { if (confirm('Quitter la partie ?')) leave(); });
 
+  // Changer de pseudo / d'avatar depuis le salon
+  function updateProfile(patch, okMsg) {
+    socket.emit('player:update', patch, (res) => {
+      if (res?.error) { toast(res.error); return; }
+      if (patch.name) { profile.name = res.name; $('#name').value = res.name; }
+      if (patch.avatar) profile.avatar = patch.avatar;
+      saveProfile();
+      if (okMsg) toast(okMsg);
+    });
+  }
+  $('#rename-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('#me-name').value.trim();
+    if (!name) { toast('Le pseudo ne peut pas être vide.'); return; }
+    if (name === meP()?.name) return;
+    updateProfile({ name }, `C'est noté, tu t'appelles ${name} !`);
+    $('#me-name').blur();
+  });
+  $('#me-avatar').addEventListener('click', () => {
+    const cur = meP()?.avatar ?? profile.avatar;
+    const next = { e: (cur.e + 1) % AVATARS.length, c: (cur.c + (cur.e + 1 === AVATARS.length ? 1 : 0)) % AV_COLORS.length };
+    updateProfile({ avatar: next });
+  });
+  $('#me-avatar').addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const cur = meP()?.avatar ?? profile.avatar;
+    updateProfile({ avatar: { e: cur.e, c: (cur.c + 1) % AV_COLORS.length } });
+  });
+
   function setSelect(sel, v) {
     const s = $(sel);
     if (![...s.options].some((o) => Number(o.value) === v)) { const o = el('option', null, String(v)); o.value = v; s.append(o); }
@@ -233,11 +271,10 @@
     const showScores = S.players.some((p) => p.score > 0);
     const list = [...S.players].sort((a, b) => (showScores ? b.score - a.score : 0));
     $('#lobby-players').replaceChildren(...list.map((p) => {
-      const li = el('li', p.id === S.me ? 'me' : '');
-      if (!p.connected) li.style.opacity = '.45';
+      const li = el('li', [p.id === S.me && 'me', !p.connected && 'off'].filter(Boolean).join(' '));
       const n = el('span', 'n', p.name + (p.id === S.me ? ' (toi)' : ''));
       li.append(avatarEl(p.avatar), n);
-      if (showScores) li.append(el('span', 'muted', `${p.score} pts`));
+      if (showScores) li.append(el('span', 'pts', `${p.score} pts`));
       if (p.id === S.hostId) li.append(el('span', null, '👑'));
       if (isHost && p.id !== S.me) {
         const k = el('button', 'kick', '✕');
@@ -249,8 +286,15 @@
       return li;
     }));
 
+    const mine = meP();
+    if (mine) {
+      if (document.activeElement !== $('#me-name')) $('#me-name').value = mine.name;
+      const ma = $('#me-avatar');
+      ma.textContent = AVATARS[mine.avatar.e];
+      ma.style.setProperty('--av', AV_COLORS[mine.avatar.c]);
+    }
+
     const st = S.settings;
-    $('.settings').classList.toggle('locked', !isHost);
     for (const id of ['#set-rounds', '#set-time', '#set-max', '#set-hints', '#set-custom-only', '#set-words']) $(id).disabled = !isHost;
     setSelect('#set-rounds', st.rounds);
     setSelect('#set-time', st.drawTime);
@@ -291,7 +335,7 @@
     if (S.state !== 'drawing' && S.state !== 'turnEnd') { label.textContent = ''; return; }
     if (S.word) {
       label.textContent = isDrawer() ? 'Ton mot à dessiner' : S.state === 'turnEnd' ? 'Le mot était' : 'Tu as trouvé';
-      box.append(el('span', null, S.word));
+      box.append(el('span', 'word', S.word));
       return;
     }
     label.textContent = 'Devine le mot';

@@ -39,3 +39,40 @@ jobs:
         if: failure()
         run: docker compose logs
       - run: docker compose down -v
+
+  # À chaque push sur main, les images sont publiées sur GitHub Container Registry.
+  # Aucun secret à configurer : le GITHUB_TOKEN du dépôt suffit.
+  publish:
+    name: Publier les images (ghcr.io)
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Nom du propriétaire en minuscules
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image du serveur
+        uses: docker/build-push-action@v6
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER }}/gribouille-server:latest
+            ghcr.io/${{ env.OWNER }}/gribouille-server:${{ github.sha }}
+      - name: Image du front
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER }}/gribouille-web:latest
+            ghcr.io/${{ env.OWNER }}/gribouille-web:${{ github.sha }}

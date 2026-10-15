@@ -4,11 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Gribouille</title>
-  <meta name="description" content="Dessine, devine, rigole. Un jeu de dessin multijoueur entre potes.">
+  <meta name="description" content="Tague, devine, rigole. Un jeu de dessin multijoueur entre potes.">
+  <meta name="theme-color" content="#2b2a30">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+  <link rel="preload" href="fonts/permanent-marker-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,76 +16,90 @@
   <!-- ACCUEIL -->
   <section id="screen-home" class="screen">
     <header class="brand">
-      <h1 class="logo">Gribouille<span class="dot">.</span></h1>
-      <p class="tagline">Dessine, devine, rigole. Entre potes, avec un simple code.</p>
+      <h1 class="logo">Gribouille</h1>
+      <p class="tagline">Tu dessines comme un pied, tes potes devinent quand même.</p>
     </header>
+
     <div class="home-grid">
-      <div class="card home-card">
-        <div class="avatar-picker">
-          <button class="icon-btn" id="av-prev" type="button" aria-label="Avatar précédent">‹</button>
-          <div class="avatar big" id="av-preview"></div>
-          <button class="icon-btn" id="av-next" type="button" aria-label="Avatar suivant">›</button>
+      <div class="poster home-card">
+        <label class="name-label" for="name">C'est quoi ton blaze ?</label>
+        <div class="identity">
+          <div class="avatar huge" id="av-preview" aria-hidden="true"></div>
+          <input id="name" class="name-input" maxlength="16" autocomplete="nickname" placeholder="Ton pseudo" spellcheck="false">
         </div>
-        <div class="swatches" id="av-colors" role="radiogroup" aria-label="Couleur de l'avatar"></div>
-        <label class="field">
-          <span>Pseudo</span>
-          <input id="name" maxlength="16" autocomplete="nickname" placeholder="Ton pseudo">
-        </label>
-        <button class="btn primary big" id="btn-create" type="button">Créer une partie</button>
-        <div class="sep"><span>ou rejoins tes potes</span></div>
+
+        <div class="picker">
+          <div class="av-grid" id="av-grid" role="radiogroup" aria-label="Choisis ton avatar"></div>
+          <div class="swatches" id="av-colors" role="radiogroup" aria-label="Couleur de fond de l'avatar"></div>
+        </div>
+
+        <button class="btn spray-pink big" id="btn-create" type="button">Créer une partie</button>
         <form class="join-row" id="join-form">
-          <input id="join-code" maxlength="4" placeholder="CODE" autocapitalize="characters" spellcheck="false" autocomplete="off" aria-label="Code de la partie">
-          <button class="btn" id="btn-join" type="submit">Rejoindre</button>
+          <input id="join-code" class="code-input" maxlength="4" placeholder="CODE" autocapitalize="characters" spellcheck="false" autocomplete="off" aria-label="Code de la partie">
+          <button class="btn spray-cyan" id="btn-join" type="submit">Rejoindre</button>
         </form>
         <p class="error" id="home-error" role="alert"></p>
       </div>
-      <div class="card hof-card">
-        <h2>🏆 Hall of fame</h2>
+
+      <aside class="sticker sticker-yellow hof-card">
+        <h2 class="scribble">Hall of fame</h2>
         <div id="hof" class="hof"></div>
-      </div>
+      </aside>
     </div>
   </section>
 
   <!-- SALON -->
   <section id="screen-lobby" class="screen" hidden>
-    <div class="lobby-top card">
-      <div>
-        <span class="muted">Code de la partie</span>
+    <div class="lobby-top">
+      <div class="sticker sticker-yellow code-sticker">
+        <span class="code-label">Code de la partie</span>
         <div class="code" id="lobby-code"></div>
       </div>
       <div class="lobby-actions">
-        <button class="btn" id="btn-copy" type="button">🔗 Copier le lien</button>
-        <button class="btn ghost" id="btn-leave" type="button">Quitter</button>
+        <button class="btn spray-cyan" id="btn-copy" type="button">Copier le lien d'invitation</button>
+        <button class="btn plain" id="btn-leave" type="button">Quitter</button>
       </div>
     </div>
+
     <div class="lobby-grid">
-      <div class="card">
-        <h2>Joueurs <span class="muted" id="lobby-count"></span></h2>
+      <div class="panel">
+        <h2 class="scribble">Le crew <span class="count" id="lobby-count"></span></h2>
         <ul class="lobby-players" id="lobby-players"></ul>
+        <form class="rename" id="rename-form">
+          <label for="me-name">Ton pseudo</label>
+          <div class="rename-row">
+            <button type="button" class="avatar" id="me-avatar" title="Changer d'avatar"></button>
+            <input id="me-name" maxlength="16" autocomplete="off" spellcheck="false">
+            <button class="btn plain small" type="submit">OK</button>
+          </div>
+          <p class="hint-text">Touche ton avatar pour en changer.</p>
+        </form>
       </div>
-      <div class="card">
-        <h2>Réglages</h2>
+
+      <div class="panel">
+        <h2 class="scribble">Les règles</h2>
         <div class="settings">
           <label class="field"><span>Manches</span><select id="set-rounds"></select></label>
-          <label class="field"><span>Temps pour dessiner</span><select id="set-time"></select></label>
+          <label class="field"><span>Temps par dessin</span><select id="set-time"></select></label>
           <label class="field"><span>Joueurs max</span><select id="set-max"></select></label>
-          <label class="toggle wide"><input type="checkbox" id="set-hints"><span>Indices (lettres dévoilées au fil du temps)</span></label>
-          <label class="field wide"><span>Mots perso <small class="muted">séparés par des virgules</small></span>
+          <label class="toggle wide"><input type="checkbox" id="set-hints"><span>Dévoiler des lettres au fil du temps</span></label>
+          <label class="field wide"><span>Vos mots à vous <small>séparés par des virgules</small></span>
             <textarea id="set-words" rows="3" placeholder="le prof de réseau, câble RJ45, la cafèt…"></textarea>
           </label>
-          <label class="toggle wide"><input type="checkbox" id="set-custom-only"><span>Uniquement nos mots perso</span></label>
+          <label class="toggle wide"><input type="checkbox" id="set-custom-only"><span>Jouer uniquement avec nos mots</span></label>
         </div>
-        <p class="muted small" id="settings-note"></p>
-        <button class="btn primary big" id="btn-start" type="button">Lancer la partie</button>
+        <p class="hint-text" id="settings-note"></p>
+        <button class="btn spray-pink big" id="btn-start" type="button">Lancer la partie</button>
       </div>
-      <div class="card chat-slot" id="lobby-chat-slot"></div>
+
+      <div class="panel chat-slot" id="lobby-chat-slot"></div>
     </div>
   </section>
 
   <!-- JEU -->
   <section id="screen-game" class="screen" hidden>
     <div class="game">
-      <div class="topbar card">
+      <div class="topbar panel">
         <div class="round" id="g-round"></div>
         <div class="hint-wrap">
           <div class="hint-label" id="g-hint-label"></div>
@@ -94,35 +107,38 @@
         </div>
         <div class="timer" id="g-timer"></div>
       </div>
-      <aside class="players card">
+
+      <aside class="players panel">
         <ul id="g-players"></ul>
-        <button class="btn ghost small-btn" id="btn-leave-game" type="button">Quitter</button>
+        <button class="btn plain small wide-btn" id="btn-leave-game" type="button">Quitter</button>
       </aside>
+
       <main class="stage">
-        <div class="canvas-wrap card">
+        <div class="canvas-wrap">
           <canvas id="canvas" width="800" height="600"></canvas>
           <div class="overlay" id="overlay" hidden></div>
         </div>
         <div class="under">
-          <div class="toolbar card" id="toolbar" hidden>
+          <div class="toolbar panel" id="toolbar" hidden>
             <div class="palette" id="palette"></div>
             <div class="sizes" id="sizes"></div>
             <div class="tools">
-              <button type="button" class="tool" data-tool="pen" title="Pinceau (B)">✏️</button>
-              <button type="button" class="tool" data-tool="fill" title="Pot de peinture (F)">🪣</button>
-              <button type="button" class="tool" data-tool="eraser" title="Gomme (E)">🧽</button>
-              <button type="button" class="tool" id="t-undo" title="Annuler (Ctrl+Z)">↩️</button>
-              <button type="button" class="tool" id="t-clear" title="Tout effacer">🗑️</button>
+              <button type="button" class="tool" data-tool="pen" title="Pinceau (B)" aria-label="Pinceau">✏️</button>
+              <button type="button" class="tool" data-tool="fill" title="Pot de peinture (F)" aria-label="Pot de peinture">🪣</button>
+              <button type="button" class="tool" data-tool="eraser" title="Gomme (E)" aria-label="Gomme">🧽</button>
+              <button type="button" class="tool" id="t-undo" title="Annuler (Ctrl+Z)" aria-label="Annuler">↩️</button>
+              <button type="button" class="tool" id="t-clear" title="Tout effacer" aria-label="Tout effacer">🗑️</button>
             </div>
           </div>
-          <div class="react card" id="react" hidden>
-            <span class="muted">Ce dessin&nbsp;?</span>
+          <div class="react panel" id="react" hidden>
+            <span>Ce dessin&nbsp;?</span>
             <button type="button" class="react-btn" id="r-up">👍 <span id="r-up-n">0</span></button>
             <button type="button" class="react-btn" id="r-down">👎 <span id="r-down-n">0</span></button>
           </div>
         </div>
       </main>
-      <aside class="card chat-slot" id="game-chat-slot"></aside>
+
+      <aside class="panel chat-slot" id="game-chat-slot"></aside>
     </div>
   </section>
 

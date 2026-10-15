@@ -1,0 +1,9 @@
+# Utiliser les images déjà construites par la CI au lieu de builder en local.
+#   GH_OWNER=ton-pseudo-github docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d --pull always --no-build
+# Pratique pour un serveur maison ou un VPS : pas besoin de Node ni du code source.
+
+services:
+  web:
+    image: ghcr.io/${GH_OWNER:?indique GH_OWNER=ton-pseudo-github}/gribouille-web:latest
+  server:
+    image: ghcr.io/${GH_OWNER:?indique GH_OWNER=ton-pseudo-github}/gribouille-server:latest

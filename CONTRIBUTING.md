@@ -51,7 +51,7 @@ On ne pousse jamais directement sur `main`.
 - [ ] Certificat HTTPS automatique (Traefik + Let's Encrypt, ou Caddy)
 - [ ] Monitoring Prometheus + Grafana (joueurs connectés, parties en cours)
 - [ ] Plusieurs instances `server` avec l'adaptateur Redis de Socket.io
-- [ ] Publication des images sur GitHub Container Registry depuis la CI
+- [x] Publication des images sur GitHub Container Registry depuis la CI
 
 **Sécurité**
 - [ ] Filtre de gros mots configurable
@@ -59,3 +59,19 @@ On ne pousse jamais directement sur `main`.
 - [ ] Audit : essayer de tricher ou de faire planter le serveur, documenter et corriger
 
 Avant de commencer un gros chantier, crée une issue pour prévenir les autres et éviter les doublons.
+
+## Charte graphique
+
+L'univers, c'est le **street art** : un mur de béton, des stickers collés, une affiche scotchée pour dessiner.
+
+| Rôle | Valeur |
+|---|---|
+| Mur (fond) | `#2d2c33` + grain |
+| Papier | `#f6f4ee` |
+| Encre | `#141316` |
+| Bombe rose (action principale) | `#ff3d8b` |
+| Bombe jaune (stickers, actif) | `#ffd60a` |
+| Bombe cyan (action secondaire) | `#2ad4ff` |
+| Bombe verte (bonne réponse) | `#8cf25b` |
+
+Polices : **Rubik Wet Paint** uniquement pour le logo et les grands effets, **Permanent Marker** pour ce qui est écrit à la main (pseudos, mots, code, titres), **Rubik** pour tout le reste. Bordures épaisses noires et ombres décalées, jamais d'ombres floues sur les éléments d'interface.

@@ -301,6 +301,27 @@ class Room {
     this.broadcast();
   }
 
+  updateProfile(p, data) {
+    let changed = false;
+    if (data.avatar && typeof data.avatar === 'object') {
+      p.avatar = { e: clampInt(data.avatar.e, 0, AVATAR_COUNT - 1, p.avatar.e), c: clampInt(data.avatar.c, 0, COLOR_COUNT - 1, p.avatar.c) };
+      changed = true;
+    }
+    if ('name' in data) {
+      const name = cleanText(data.name, 16);
+      if (!name) return 'Le pseudo ne peut pas être vide.';
+      const taken = [...this.players.values()].some((q) => q !== p && q.name.toLowerCase() === name.toLowerCase());
+      if (taken) return 'Ce pseudo est déjà pris dans la partie.';
+      if (name !== p.name) {
+        this.sys(`${p.name} s'appelle maintenant ${name}`);
+        p.name = name;
+        changed = true;
+      }
+    }
+    if (changed) this.broadcast();
+    return null;
+  }
+
   kick(by, targetId) {
     if (by.id !== this.hostId || targetId === by.id) return;
     const t = this.players.get(targetId);
@@ -621,6 +642,12 @@ export function attach(io) {
     socket.on('room:leave', () => leaveCurrent());
     socket.on('room:settings', (s) => me() && room.updateSettings(player, obj(s)));
     socket.on('room:kick', (id) => me() && room.kick(player, String(id)));
+    socket.on('player:update', (data, cb) => {
+      if (!me()) return reply(cb, { error: 'Tu n\'es dans aucune partie.' });
+      if (!actionLimit.take()) return reply(cb, { error: 'Doucement 🙂' });
+      const err = room.updateProfile(player, obj(data));
+      reply(cb, err ? { error: err } : { ok: true, name: player.name });
+    });
     socket.on('game:start', (_d, cb) => {
       if (!me()) return;
       const err = room.startGame(player);

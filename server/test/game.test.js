@@ -168,6 +168,20 @@ test('l\'hôte peut exclure, et l\'exclu ne revient pas', async () => {
   assert.match(retry.error, /exclu/);
 });
 
+test('on peut changer de pseudo et d\'avatar dans le salon', async () => {
+  const a = await connect();
+  const b = await connect();
+  const r = await call(a, 'room:create', { name: 'Maxime', token: 'p'.repeat(32) });
+  await call(b, 'room:join', { name: 'Lucas', code: r.code, token: 'q'.repeat(32) });
+  await until(() => last(a)?.players.length === 2);
+  assert.match((await call(b, 'player:update', { name: 'maxime' })).error, /déjà pris/);
+  assert.ok((await call(b, 'player:update', { name: '  Lulu 🦊 ', avatar: { e: 5, c: 3 } })).ok);
+  await until(() => last(a).players.some((p) => p.name === 'Lulu 🦊'));
+  assert.deepEqual(last(a).players.find((p) => p.name === 'Lulu 🦊').avatar, { e: 5, c: 3 });
+  assert.ok(a.chats.some((m) => m.text === 'Lucas s\'appelle maintenant Lulu 🦊'));
+  assert.ok((await call(b, 'player:update', { name: '' })).error);
+});
+
 test('les pseudos sont nettoyés et dédoublonnés', async () => {
   const a = await connect();
   const b = await connect();
