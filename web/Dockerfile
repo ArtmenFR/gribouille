@@ -9,6 +9,12 @@ LABEL org.opencontainers.image.title="gribouille-web" \
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY public /usr/share/nginx/html
 
+# Les droits des fichiers dépendent de la machine qui construit (umask) :
+# on les fixe pour que le processus nginx puisse toujours les lire.
+RUN find /usr/share/nginx/html -type d -exec chmod 755 {} + \
+ && find /usr/share/nginx/html -type f -exec chmod 644 {} + \
+ && chmod 644 /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
