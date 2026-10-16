@@ -81,8 +81,10 @@ Les miniatures de la galerie sont calculées depuis ce même tableau.
 
 ## Score
 
-- Devineur : `100 + 400 × (temps restant / temps total)`, +50 pour le premier
-- Dessinateur : `50 + 50 × (temps restant / temps total)` par joueur qui trouve
+- Difficulté : chaque mot a un niveau, facile (×1), moyen (×1,5) ou difficile (×2). Il part du thème (un animal est facile, une expression ou une personnalité est difficile) puis s'ajuste à la forme du mot : un mot court de 5 lettres ou moins descend d'un cran, une expression de 3 mots ou plus et un mot de 13 lettres ou plus montent d'un cran. Le dessinateur choisit entre un mot de chaque niveau, et tout le monde voit le niveau pendant le tour
+- Devineur : `(100 + 400 × (temps restant / temps total), +50 pour le premier) × multiplicateur`
+- Dessinateur : `(50 + 50 × (temps restant / temps total)) × multiplicateur` par joueur qui trouve
+- Pas de répétition : un mot proposé ne revient pas dans le même salon, même d'une partie à l'autre, tant que les thèmes choisis ne sont pas épuisés. Le serveur garde aussi les 400 derniers mots joués (dans Redis) et les évite dans les nouveaux salons
 - Indices : jusqu'à 3 lettres dévoilées à 45 %, 65 % et 82 % du temps
 - Votes : pendant le dessin et la fin du tour, chaque devineur peut voter pour ou contre le dessin. Le dessinateur gagne 25 points par vote positif net
 - Meilleur dessin : en fin de partie, le dessin qui a le plus de votes positifs nets rapporte 150 points de plus à son auteur

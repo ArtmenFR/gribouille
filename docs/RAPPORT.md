@@ -39,7 +39,7 @@ Ce document raconte tout le projet : ce qu'on a construit, comment, pourquoi ces
 
 **Résultat.** Une commande, `make up`, construit les images, lance les trois conteneurs dans le bon ordre et attend qu'ils soient tous en bonne santé. Le jeu est ensuite jouable à plusieurs, sur le même réseau ou à distance, depuis un PC ou un téléphone.
 
-**Quelques chiffres.** 3 conteneurs, 2 réseaux dont un interne, 1 volume, 1 seul port exposé, 999 mots répartis en 11 thèmes combinables, 12 tests automatiques, version 1.3.0.
+**Quelques chiffres.** 3 conteneurs, 2 réseaux dont un interne, 1 volume, 1 seul port exposé, 999 mots répartis en 11 thèmes combinables, 14 tests automatiques, version 1.4.0.
 
 ## 2. Ce que fait le jeu
 
@@ -78,6 +78,8 @@ Le projet a avancé par versions successives. Chaque version a été testée, pu
 **Version 1.2 : retours des premiers joueurs.** Après une première vraie partie entre amis : une banque de mots beaucoup plus grande rangée en paquets, des modes de jeu préréglés, le vote pour le meilleur dessin, le bouton pour masquer son mot, l'affichage de la version, et la correction de tous les problèmes découverts pendant ces tests (voir partie 8).
 
 **Version 1.3 : des thèmes à la carte.** La banque de mots passe à 999 mots en 11 thèmes (dont Amour, Personnalités connues, Sucreries et deux thèmes +18) que l'hôte coche et combine librement, avec de nouveaux modes préréglés.
+
+**Version 1.4 : la difficulté compte.** Chaque mot est facile, moyen ou difficile et rapporte ×1, ×1,5 ou ×2. Le dessinateur choisit entre un mot de chaque niveau, et les mots ne reviennent plus d'une partie à l'autre : le salon retient ce qu'il a vu, et le serveur garde les 400 derniers mots joués dans Redis.
 
 L'historique complet est dans [`CHANGELOG.md`](../CHANGELOG.md) et dans les commits du dépôt.
 

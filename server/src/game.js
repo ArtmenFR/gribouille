@@ -1,8 +1,8 @@
 // Moteur de jeu : salons à code, tours, mots, indices, scores.
 // Règle d'or anti-triche : le mot n'est JAMAIS envoyé à un joueur qui doit le deviner.
 import crypto from 'node:crypto';
-import { PACKS, PRESETS, PACK_LIST, PRESET_LIST, DEFAULT_PACKS, cleanPacks } from './words.js';
-import { recordGame } from './store.js';
+import { PACKS, PRESETS, PACK_LIST, PRESET_LIST, DEFAULT_PACKS, LEVELS, cleanPacks, wordLevel } from './words.js';
+import { recordGame, rememberWords, loadRecentWords } from './store.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const MAX_ROOMS = 300;
@@ -21,6 +21,20 @@ export const AVATAR_LIMITS = { s: 8, h: 12, e: 10, m: 10, a: 10 };
 const HINT_THRESHOLDS = [0.45, 0.65, 0.82];
 
 const rooms = new Map();
+
+// Mots joués récemment sur tout le serveur (gardés dans Redis s'il est là) :
+// une nouvelle partie évite les mots des parties précédentes, même dans un autre salon.
+const RECENT_MAX = 400;
+const recent = [];
+const recentSet = new Set();
+function markRecent(words) {
+  for (const w of words) {
+    if (recentSet.has(w)) continue;
+    recent.push(w);
+    recentSet.add(w);
+    if (recent.length > RECENT_MAX) recentSet.delete(recent.shift());
+  }
+}
 
 // ---------- utilitaires ----------
 const rand = (n) => crypto.randomInt(n);
@@ -123,6 +137,7 @@ class Room {
     this.emptySince = null;
     this.turnId = 0;
     this.podium = null;
+    this.seen = new Set(); // mots déjà proposés dans ce salon, toutes parties confondues
     this.toLobby();
   }
 
@@ -131,7 +146,6 @@ class Room {
     this.round = 0;
     this.order = [];
     this.turnIndex = -1;
-    this.usedWords = new Set();
     this.clearTurn();
   }
 
@@ -217,6 +231,8 @@ class Room {
       hint: this.hint(),
       word: showWord ? this.word : null,
       choices: isDrawer && this.state === 'choosing' ? this.choices : null,
+      choiceLevels: isDrawer && this.state === 'choosing' ? this.choices.map((w) => this.levelInfo(w)) : null,
+      level: this.word && (this.state === 'drawing' || this.state === 'turnEnd') ? this.levelInfo(this.word) : null,
       reactions: this.reactionCounts(),
       myReaction: this.reactions.get(p.id) ?? 0,
       podium: this.state === 'gameOver' ? this.podium : null,
@@ -418,24 +434,50 @@ class Room {
     this.broadcast();
   }
 
+  levelInfo(w) {
+    const level = wordLevel(w);
+    return { level, ...LEVELS[level] };
+  }
+
+  // Trois mots au choix : un facile, un moyen, un difficile, jamais déjà vus dans ce salon
+  // et en évitant ceux joués récemment sur le serveur.
   pickWords(n) {
     const custom = this.settings.customWords;
     const base = [...new Set(cleanPacks(this.settings.packs).flatMap((id) => PACKS[id].words))];
-    const pool = this.settings.customOnly && custom.length >= n ? custom : [...base, ...custom, ...custom];
-    let avail = [...new Set(pool.filter((w) => !this.usedWords.has(w)))];
-    if (avail.length < n) {
-      this.usedWords.clear();
-      avail = [...new Set(pool)];
+    const pool = [...new Set(this.settings.customOnly && custom.length >= n ? custom : [...base, ...custom])];
+    let fresh = pool.filter((w) => !this.seen.has(w));
+    if (fresh.length < n) {
+      // Tout a été vu : on repart de zéro pour ces thèmes
+      for (const w of pool) this.seen.delete(w);
+      fresh = pool;
     }
+    const byLevel = { 1: [], 2: [], 3: [] };
+    for (const w of fresh) byLevel[wordLevel(w)].push(w);
+    const take = (list) => {
+      const notRecent = list.filter((w) => !recentSet.has(w));
+      const from = notRecent.length ? notRecent : list;
+      const w = from[rand(from.length)];
+      list.splice(list.indexOf(w), 1);
+      return w;
+    };
     const out = [];
-    while (out.length < n && avail.length) out.push(avail.splice(rand(avail.length), 1)[0]);
+    // Un mot par niveau ; s'il n'en reste plus à un niveau, on prend le plus proche
+    for (const want of [1, 2, 3]) {
+      if (out.length >= n) break;
+      const order = [want, want === 1 ? 2 : want - 1, want === 3 ? 1 : want + 1, 3, 2, 1];
+      const lvl = order.find((l) => byLevel[l].length);
+      if (lvl) out.push(take(byLevel[lvl]));
+    }
+    out.sort((a, b) => wordLevel(a) - wordLevel(b));
+    for (const w of out) this.seen.add(w);
     return out;
   }
 
   chooseWord(p, idx) {
     if (this.state !== 'choosing' || p.id !== this.drawerId || !this.choices.length) return;
     this.word = this.choices[clampInt(idx, 0, this.choices.length - 1, 0)];
-    this.usedWords.add(this.word);
+    markRecent([this.word]);
+    rememberWords([this.word]).catch(() => {});
     this.state = 'drawing';
     this.turnStart = Date.now();
     this.deadline = this.turnStart + this.settings.drawTime * 1000;
@@ -564,14 +606,16 @@ class Room {
     const total = this.deadline - this.turnStart;
     const remaining = Math.max(0, this.deadline - Date.now()) / total;
     const first = this.guessOrder.length === 0;
-    const pts = Math.round(100 + 400 * remaining) + (first ? 50 : 0);
+    const { mult } = this.levelInfo(this.word);
+    // Plus le mot est difficile, plus il rapporte, à celui qui trouve comme au dessinateur
+    const pts = Math.round((100 + 400 * remaining + (first ? 50 : 0)) * mult);
     p.score += pts;
     p.lastGain = pts;
     p.guessed = true;
     this.guessOrder.push(p.id);
     const drawer = this.players.get(this.drawerId);
     if (drawer) {
-      const dp = Math.round(50 + 50 * remaining);
+      const dp = Math.round((50 + 50 * remaining) * mult);
       drawer.score += dp;
       drawer.lastGain += dp;
     }
@@ -627,6 +671,7 @@ export function stats() {
 }
 
 export function attach(io) {
+  loadRecentWords().then(markRecent).catch(() => {});
   const loop = setInterval(() => {
     const now = Date.now();
     for (const [code, r] of rooms) {

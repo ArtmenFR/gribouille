@@ -252,3 +252,45 @@ test('les votes rapportent des points au dessinateur et désignent le meilleur d
   assert.ok(after >= before + 50, `bonus de vote attendu (${before} -> ${after})`);
   assert.ok(a.chats.some((m) => /grâce à vos votes/.test(m.text)));
 });
+
+test('mots au choix par difficulté, points multipliés, pas de répétition d\'une partie à l\'autre', async () => {
+  const a = await connect();
+  const b = await connect();
+  const r = await call(a, 'room:create', { name: 'Ana', token: 'm'.repeat(32) });
+  await call(b, 'room:join', { name: 'Ben', code: r.code, token: 'n'.repeat(32) });
+  await until(() => last(a)?.players.length === 2);
+  a.emit('room:settings', { preset: 'normal' });
+  a.emit('room:settings', { rounds: 1, drawTime: 60 });
+  await until(() => last(a).settings.rounds === 1);
+  const all = [a, b];
+  const seen = [];
+
+  // Un tour : le dessinateur prend le mot le plus difficile, l'autre le trouve tout de suite
+  async function playTurn() {
+    await until(() => all.every((x) => last(x)?.state === 'choosing'), 12000);
+    const drawer = all.find((x) => last(x).drawerId === last(x).me);
+    const guesser = all.find((x) => x !== drawer);
+    const st = last(drawer);
+    assert.equal(st.choices.length, 3);
+    assert.deepEqual(st.choiceLevels.map((l) => l.level), [1, 2, 3], 'un facile, un moyen, un difficile');
+    assert.deepEqual(st.choiceLevels.map((l) => l.mult), [1, 1.5, 2]);
+    assert.equal(last(guesser).choiceLevels, null, 'les niveaux des choix restent chez le dessinateur');
+    for (const w of st.choices) assert.ok(!seen.includes(w), `« ${w} » déjà proposé`);
+    seen.push(...st.choices);
+    drawer.emit('word:choose', 2);
+    await until(() => last(guesser).state === 'drawing');
+    assert.equal(last(guesser).level.level, 3, 'tout le monde voit la difficulté du mot');
+    guesser.emit('chat', last(drawer).word);
+    await until(() => last(guesser).state === 'turnEnd');
+    const me = last(guesser).players.find((p) => p.id === last(guesser).me);
+    assert.ok(me.lastGain > 900, `un mot difficile rapporte double (${me.lastGain})`);
+  }
+
+  a.emit('game:start');
+  await playTurn();
+  await playTurn();
+  await until(() => last(a).state === 'gameOver', 12000);
+  // Nouvelle partie dans le même salon : aucun des mots déjà proposés ne revient
+  a.emit('game:start');
+  await playTurn();
+});

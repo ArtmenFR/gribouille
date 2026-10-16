@@ -503,6 +503,19 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; cursor: defaul
 .choice:nth-child(2) { animation-delay: .13s; --r: 1.5deg; }
 .choice:nth-child(3) { animation-delay: .21s; --r: -1deg; }
 .choice:hover { background: var(--yellow); transform: rotate(0deg) translateY(-4px) scale(1.04); }
+/* Difficulté du mot : vert facile, bleu moyen, corail difficile */
+.lvl-1 { --lvl: var(--green); }
+.lvl-2 { --lvl: var(--blue); }
+.lvl-3 { --lvl: var(--coral); }
+.choice { display: flex; flex-direction: column; align-items: center; gap: 6px; border-bottom: 5px solid var(--lvl, transparent); }
+.choice-lvl { font-size: var(--fs-sm); font-weight: 600; color: var(--lvl); }
+.choice:hover .choice-lvl { color: var(--ink); }
+.hint .hint-lvl, .lvl-note {
+  font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0;
+  color: var(--lvl); border: 2px solid var(--lvl); border-radius: 999px;
+  padding: 1px 10px; align-self: center; margin-left: var(--s2);
+}
+.lvl-note { display: inline-block; margin: var(--s2) 0 0; animation: fade-up var(--t-med) var(--ease-out) both; }
 @keyframes card-in { from { opacity: 0; transform: translateY(-30px) rotate(-8deg) scale(.8); } }
 .big-word { font-size: clamp(2rem, 5.5vw, 3.4rem); font-weight: 800; color: var(--yellow); line-height: 1.1; display: flex; flex-wrap: wrap; justify-content: center; }
 .big-word span { display: inline-block; animation: letter-pop .45s var(--ease-spring) both; white-space: pre; }

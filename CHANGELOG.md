@@ -1,5 +1,11 @@
 # Historique des versions
 
+## 1.4.0 · 16 octobre 2026
+
+- Difficulté des mots : chaque mot est facile, moyen ou difficile, et rapporte ×1, ×1,5 ou ×2, à ceux qui trouvent comme au dessinateur.
+- Le dessinateur choisit entre un mot de chaque niveau ; le niveau du mot s'affiche pendant le tour et à la fin.
+- Plus de mots en double : un mot déjà proposé ne revient pas dans le salon, même en relançant une partie. Le serveur évite aussi les derniers mots joués, gardés dans Redis.
+
 ## 1.3.0 · 15 octobre 2026
 
 - Thèmes de mots cochables et combinables dans le salon : on en choisit un ou plusieurs, les mots sont tirés dans tout ce qui est coché.

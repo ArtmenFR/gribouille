@@ -534,6 +534,8 @@
   });
   renderPeek();
 
+  const fmtMult = (m) => `×${String(m).replace('.', ',')}`;
+
   function renderHint() {
     const box = $('#g-hint');
     const label = $('#g-hint-label');
@@ -546,6 +548,7 @@
       return;
     }
     if (S.state !== 'drawing' && S.state !== 'turnEnd') { label.textContent = ''; lastHint = ''; return; }
+    const levelTag = () => S.level && el('span', `hint-lvl lvl-${S.level.level}`, `${S.level.label} ${fmtMult(S.level.mult)}`);
     if (S.word) {
       const private_ = S.state === 'drawing';
       label.textContent = isDrawer() ? 'Ton mot à dessiner' : S.state === 'turnEnd' ? 'Le mot était' : 'Bien trouvé';
@@ -562,6 +565,7 @@
         label.textContent += ' (masqué)';
       }
       box.append(w);
+      if (levelTag()) box.append(levelTag());
       peek.hidden = !private_;
       lastHint = '';
       return;
@@ -576,6 +580,7 @@
       box.append(el('span', isNew ? 'ch pop' : 'ch', ch));
     });
     box.append(el('span', 'count', `${letters} lettres`));
+    if (levelTag()) box.append(levelTag());
     lastHint = S.hint;
   }
 
@@ -629,12 +634,15 @@
       if (isDrawer() && S.choices) {
         const box = el('div', 'choices');
         S.choices.forEach((w, i) => {
-          const b = el('button', 'choice', w);
+          const lv = S.choiceLevels?.[i];
+          const b = el('button', `choice lvl-${lv?.level ?? 2}`);
+          b.append(el('span', 'choice-word', w));
+          if (lv) b.append(el('span', 'choice-lvl', `${lv.label} · points ${fmtMult(lv.mult)}`));
           b.type = 'button';
           b.addEventListener('click', () => socket.emit('word:choose', i));
           box.append(b);
         });
-        ov.append(el('h3', null, 'À toi de dessiner'), el('p', 'sub', 'Choisis un mot'), box);
+        ov.append(el('h3', null, 'À toi de dessiner'), el('p', 'sub', 'Choisis un mot : plus il est difficile, plus il rapporte'), box);
       } else {
         const w = el('div', 'waiting');
         w.append(avatarEl(drawer?.avatar, 'big'));
@@ -651,6 +659,7 @@
           big.append(s);
         });
         ov.append(big);
+        if (S.level) ov.append(el('p', `lvl-note lvl-${S.level.level}`, `Mot ${S.level.label.toLowerCase()}, points ${fmtMult(S.level.mult)}`));
       }
       const gains = el('ul', 'gains');
       [...S.players].sort((a, b) => b.lastGain - a.lastGain).forEach((p, i) => {

@@ -49,3 +49,13 @@ test('les thèmes de mots sont propres', async () => {
   const all = Object.values(PACKS).flatMap((p) => p.words.map((w) => w.toLowerCase()));
   for (const b of banned) assert.ok(!all.some((w) => w.includes(b)), `${b} absent de la banque`);
 });
+
+test('la difficulté des mots suit le thème et la forme du mot', async () => {
+  const { PACKS, DEFAULT_PACKS, wordLevel } = await import('../src/words.js');
+  assert.equal(wordLevel('chat'), 1);
+  assert.equal(wordLevel('chercher une aiguille dans une botte de foin'), 3);
+  assert.equal(wordLevel('prof de réseau'), 3, 'un mot perso de 3 mots est difficile');
+  assert.equal(wordLevel('kebab'), 1);
+  const levels = new Set(DEFAULT_PACKS.flatMap((id) => PACKS[id].words.map(wordLevel)));
+  assert.deepEqual([...levels].sort(), [1, 2, 3], 'les thèmes par défaut ont les trois niveaux');
+});

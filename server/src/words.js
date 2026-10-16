@@ -229,6 +229,40 @@ export const PRESETS = {
   hardcore: { label: 'Hardcore (+18)', desc: 'Situations gênantes et gros mots, 60 secondes, sans indices.', packs: ['hardcore', 'grosmots'], rounds: 3, drawTime: 60, hints: false },
 };
 
+// ---------- difficulté des mots ----------
+// 1 facile, 2 moyen, 3 difficile. Plus le mot est dur, plus il rapporte.
+export const LEVELS = {
+  1: { label: 'Facile', mult: 1 },
+  2: { label: 'Moyen', mult: 1.5 },
+  3: { label: 'Difficile', mult: 2 },
+};
+
+// Niveau de départ de chaque thème : un animal se dessine plus vite qu'une expression.
+const PACK_LEVEL = {
+  facile: 1, animaux: 1, aliments: 1, sucreries: 1,
+  classique: 2, amour: 2, geek: 2, hardcore: 2, grosmots: 2,
+  personnalites: 3, difficile: 3,
+};
+
+// Un mot présent dans plusieurs thèmes garde le niveau le plus facile.
+const BASE_LEVEL = new Map();
+for (const [id, pack] of Object.entries(PACKS)) {
+  for (const w of pack.words) BASE_LEVEL.set(w, Math.min(BASE_LEVEL.get(w) ?? 3, PACK_LEVEL[id] ?? 2));
+}
+
+// Le niveau part du thème puis s'ajuste à la forme du mot :
+// un mot court est plus simple, une expression de 3 mots ou plus est plus dure.
+export function wordLevel(word) {
+  const w = String(word ?? '');
+  const parts = w.split(/[\s'’-]+/).filter(Boolean).length;
+  const letters = [...w].filter((ch) => /[\p{L}\p{N}]/u.test(ch)).length;
+  let lvl = BASE_LEVEL.get(w) ?? 2;
+  if (parts >= 3) lvl += 1;
+  else if (parts === 1 && letters <= 5) lvl -= 1;
+  if (letters >= 13) lvl += 1;
+  return Math.min(3, Math.max(1, lvl));
+}
+
 export const PACK_LIST = Object.entries(PACKS).map(([id, p]) => ({ id, label: p.label, count: p.words.length, adult: Boolean(p.adult) }));
 export const PRESET_LIST = Object.entries(PRESETS).map(([id, p]) => ({ id, label: p.label, desc: p.desc }));
 
