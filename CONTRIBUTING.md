@@ -27,7 +27,7 @@ On ne pousse jamais directement sur `main`.
 ## Avant d'ouvrir une pull request
 
 - [ ] `cd server && npm test` passe
-- [ ] `docker compose up -d --build` démarre sans erreur
+- [ ] `make up` démarre toute la stack sans erreur (tous les services `healthy`)
 - [ ] Testé avec au moins 2 navigateurs (une fenêtre privée suffit pour le 2e joueur)
 - [ ] Le mot à deviner n'est toujours envoyé qu'à ceux qui ont le droit de le voir
 - [ ] L'interface respecte la charte (voir plus bas)
@@ -42,7 +42,7 @@ On ne pousse jamais directement sur `main`.
 | Modifier l'interface | `web/public/index.html`, `style.css`, `app.js` |
 | Ajouter une pièce de perso | `web/public/avatar.js` et `AVATAR_LIMITS` dans `server/src/game.js` |
 | Ajouter une icône | `web/public/icons.js` |
-| Changer l'infra | `docker-compose.yml`, `web/nginx.conf`, les `Dockerfile` |
+| Changer l'infra | `compose.yml`, `traefik/`, `monitoring/`, `redis/`, `web/nginx.conf`, les `Dockerfile` |
 
 ## Charte graphique
 

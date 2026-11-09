@@ -1,0 +1,62 @@
+# Routage : un sous-domaine par service.
+# Les règles utilisent une expression régulière sur le début du nom d'hôte, donc le domaine
+# n'a pas besoin d'être écrit ici : gribouille.localhost, gribouille.192.168.56.10.nip.io,
+# gribouille.vm.local… tout fonctionne.
+http:
+  routers:
+    gribouille:
+      rule: 'HostRegexp(`^gribouille\..+$`)'
+      entryPoints: [web]
+      service: gribouille
+
+    grafana:
+      rule: 'HostRegexp(`^grafana\..+$`)'
+      entryPoints: [web]
+      service: grafana        # Grafana a sa propre authentification
+
+    prometheus:
+      rule: 'HostRegexp(`^prometheus\..+$`)'
+      entryPoints: [web]
+      middlewares: [admin-auth]
+      service: prometheus
+
+    alertmanager:
+      rule: 'HostRegexp(`^alertmanager\..+$`)'
+      entryPoints: [web]
+      middlewares: [admin-auth]
+      service: alertmanager
+
+    mail:
+      rule: 'HostRegexp(`^mail\..+$`)'
+      entryPoints: [web]
+      middlewares: [admin-auth]
+      service: mailpit
+
+    traefik:
+      rule: 'HostRegexp(`^traefik\..+$`)'
+      entryPoints: [web]
+      middlewares: [admin-auth]
+      service: api@internal   # dashboard : http://traefik.<domaine>/dashboard/
+
+  middlewares:
+    admin-auth:
+      basicAuth:
+        usersFile: /etc/traefik/users.htpasswd   # généré par scripts/init.sh, hors Git
+        removeHeader: true
+
+  services:
+    gribouille:
+      loadBalancer:
+        servers: [{ url: "http://web:80" }]
+    grafana:
+      loadBalancer:
+        servers: [{ url: "http://grafana:3000" }]
+    prometheus:
+      loadBalancer:
+        servers: [{ url: "http://prometheus:9090" }]
+    alertmanager:
+      loadBalancer:
+        servers: [{ url: "http://alertmanager:9093" }]
+    mailpit:
+      loadBalancer:
+        servers: [{ url: "http://mailpit:8025" }]

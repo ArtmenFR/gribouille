@@ -31,24 +31,36 @@ Un joueur crée une partie et reçoit un code à 4 lettres, ou un lien à partag
 
 ## Lancer en 30 secondes
 
-Prérequis : Docker et Docker Compose.
+Prérequis : Docker (avec le plugin Compose) et `openssl`, sur une VM Linux ou ta machine.
 
 ```bash
 git clone https://github.com/ArtmenFR/gribouille.git
 cd gribouille
-docker compose up -d --build
+make up        # génère .env + mots de passe, build, démarre, attend que tout soit "healthy"
 ```
 
-Puis ouvrir **http://localhost:8080**. Pour changer le port : `PORT=3000 docker compose up -d`.
+`make up` affiche ensuite les adresses. Tout passe par Traefik, un sous-domaine par service :
 
-Le `Makefile` regroupe les commandes utiles : `make help` affiche la liste (`up`, `down`, `logs`, `test`, `dev`, et les démos pour la soutenance).
+| Service | Adresse | Accès |
+|---|---|---|
+| Le jeu | `http://gribouille.localhost` | libre |
+| Grafana (dashboards) | `http://grafana.localhost` | `admin` + mot de passe de `.env` |
+| Prometheus, Alertmanager | `http://prometheus.localhost`, `http://alertmanager.localhost` | `admin` + mot de passe de `.env` |
+| Boîte mail de test (Mailpit) | `http://mail.localhost` | idem |
+| Dashboard Traefik | `http://traefik.localhost/dashboard/` | idem |
+
+**Depuis un autre PC que la VM** : `*.localhost` ne fonctionne que sur la machine elle-même. Utilise `*.<ip-de-la-vm>.nip.io` (par exemple `http://gribouille.192.168.56.10.nip.io`, DNS public, aucune configuration) ou ajoute les noms dans le fichier `hosts` du PC. Si le port 80 est déjà pris, change `HTTP_PORT` dans `.env`.
+
+Sans `make` : `./scripts/init.sh && docker compose up -d --build --wait`. Sans Docker, voir « Développer sans Docker » plus bas.
+
+`make help` liste toutes les commandes utiles (`logs`, `ps`, `test`, `dev`, `scan`, et une démo par critère de la soutenance).
 
 ## Jouer avec ses potes
 
 | Situation | Comment faire |
 |---|---|
-| Même Wi-Fi | Partager `http://<ton-IP-locale>:8080` (sur Linux : `hostname -I`) |
-| À distance, sans configuration | `cloudflared tunnel --url http://localhost:8080` puis partager l'URL donnée |
+| Même réseau | Partager `http://gribouille.<ip-de-la-vm>.nip.io` (sur Linux : `hostname -I`) |
+| À distance, sans configuration | `cloudflared tunnel --url http://localhost:80 --http-host-header gribouille.localhost` puis partager l'URL donnée |
 | Réseau privé entre potes | Tailscale : chacun rejoint le réseau et utilise ton IP Tailscale |
 | Serveur maison ou VPS | Lancer la stack dessus et ouvrir le port, idéalement derrière un proxy HTTPS |
 
@@ -57,7 +69,8 @@ Le `Makefile` regroupe les commandes utiles : `make help` affiche la liste (`up`
 | Document | Contenu |
 |---|---|
 | [`docs/RAPPORT.md`](docs/RAPPORT.md) | **Le rapport complet du projet** : démarche, choix, sécurité, problèmes rencontrés et solutions |
-| [`docs/CONTENEURISATION.md`](docs/CONTENEURISATION.md) | Chaque notion Docker utilisée et le déroulé de démonstration |
+| [`docs/CONTENEURISATION.md`](docs/CONTENEURISATION.md) | Chaque notion Docker utilisée, les choix techniques et la procédure de restauration |
+| [`docs/SOUTENANCE.md`](docs/SOUTENANCE.md) | Plan de la présentation de 15 minutes et démos associées |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Fonctionnement du jeu : protocole, score, anti-triche, rendu |
 | [`CHANGELOG.md`](CHANGELOG.md) | Historique des versions |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Travailler à plusieurs sur le projet |
@@ -66,22 +79,18 @@ Le `Makefile` regroupe les commandes utiles : `make help` affiche la liste (`up`
 ## Architecture
 
 ```
-            Navigateurs (PC, téléphone)
-                     │  HTTP + WebSocket
-                     ▼
-        ┌────────────────────────────┐
-        │  web : nginx               │   seul conteneur exposé (port 8080)
-        │  front + reverse proxy     │
-        └─────────────┬──────────────┘
-          réseau front│
-        ┌─────────────▼──────────────┐
-        │  server : Node + Socket.io │   logique du jeu
-        │  non-root, lecture seule   │
-        └─────────────┬──────────────┘
-          réseau back │ (interne)
-        ┌─────────────▼──────────────┐
-        │  redis                     │   classement persistant (volume)
-        └────────────────────────────┘
+   Navigateurs ──HTTP + WebSocket──▶ :80
+                                      │
+   ┌──────────────────────────────────▼───────────────────────────────┐
+   │ traefik  (seul port publié) : un sous-domaine par service        │  réseau proxy
+   └──┬──────────┬────────────┬─────────────┬──────────────┬──────────┘
+      │          │            │             │              │
+   web (nginx)  grafana   prometheus   alertmanager     mailpit  ◀── alertes par mail
+      │          └────────────┴──── scrape ─┬──────────────┘          (réseau monitoring)
+      │ réseau app (interne)                 │ cadvisor · node-exporter · redis-exporter ×2
+   server (Node + Socket.io)                 │
+      │ réseau data (interne)  ──────────────┘
+   redis-master ──réplication──▶ redis-replica ──dump RDB──▶ redis-backup ─▶ volume backups
 ```
 
 Toutes les notions Docker utilisées (multi-stage, réseaux, volumes, healthchecks, durcissement, CI) sont expliquées dans **[`docs/CONTENEURISATION.md`](docs/CONTENEURISATION.md)**, avec le déroulé de démonstration pour la soutenance. Le fonctionnement du jeu (protocole, score, anti-triche) est dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -94,10 +103,15 @@ L'identité visuelle complète (logo, couleurs, typographie, icônes, persos, co
 
 ```
 gribouille/
-├── docker-compose.yml        Stack de référence : web + server + redis
-├── docker-compose.dev.yml    Surcharge dev : code monté, rechargement auto
-├── docker-compose.ghcr.yml   Utiliser les images publiées par la CI
+├── compose.yml               Stack complète (14 services, 4 réseaux, 6 volumes)
+├── compose.dev.yml           Surcharge dev : code monté, rechargement auto
+├── compose.ghcr.yml          Utiliser les images publiées par la CI
+├── .env.example              Variables (le vrai .env est généré par scripts/init.sh)
 ├── Makefile                  Commandes et démos
+├── scripts/init.sh           Génère .env et les mots de passe
+├── traefik/                  Reverse proxy : traefik.yml (statique) + dynamic.yml (routes)
+├── redis/redis.conf          Persistance AOF + RDB, mémoire bornée
+├── monitoring/               Prometheus (+ alertes), Alertmanager, Grafana (dashboard provisionné)
 ├── server/                   Serveur de jeu (Node.js)
 │   ├── Dockerfile            Image multi-stage, non-root
 │   ├── src/
@@ -106,7 +120,7 @@ gribouille/
 │   │   ├── store.js          Classement Redis
 │   │   └── words.js          Paquets de mots et modes de jeu
 │   └── test/                 Tests unitaires et partie simulée
-├── web/                      Front + reverse proxy
+├── web/                      Serveur web (fichiers statiques + relais WebSocket)
 │   ├── Dockerfile
 │   ├── nginx.conf            Proxy WebSocket, en-têtes de sécurité
 │   └── public/               Pages, styles, logo, icônes, persos, polices
@@ -114,6 +128,7 @@ gribouille/
 ├── docs/
 │   ├── RAPPORT.md            Rapport complet du projet
 │   ├── CONTENEURISATION.md   Dossier technique du cours
+│   ├── SOUTENANCE.md         Plan de présentation (15 min) et démos
 │   ├── ARCHITECTURE.md       Fonctionnement du jeu
 │   └── screenshots/
 └── .github/                  CI, modèles d'issues et de PR

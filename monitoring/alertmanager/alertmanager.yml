@@ -1,0 +1,18 @@
+# Les alertes partent par mail vers Mailpit (visible sur mail.<domaine>)
+global:
+  smtp_smarthost: "mailpit:1025"
+  smtp_from: "alertmanager@gribouille.local"
+  smtp_require_tls: false
+
+route:
+  receiver: mail-admin
+  group_by: [alertname]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h
+
+receivers:
+  - name: mail-admin
+    email_configs:
+      - to: "admin@gribouille.local"
+        send_resolved: true

@@ -28,18 +28,38 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
+      - name: Configuration (.env et mots de passe)
+        run: ./scripts/init.sh
       - name: Construire et lancer la stack
         run: docker compose up -d --build --wait
-      - name: Vérifier que le jeu répond
+      - name: Vérifier que le jeu répond (via Traefik)
         run: |
-          curl -fsS http://localhost:8080/ | grep -q Gribouille
-          curl -fsSI http://localhost:8080/ | grep -qi content-security-policy
-          curl -fsSI http://localhost:8080/app.js | grep -qi "cache-control: no-cache"
-          curl -fsS http://localhost:8080/api/health
-          curl -fsS http://localhost:8080/api/leaderboard
-          curl -fsS -o /dev/null http://localhost:8080/socket.io/socket.io.min.js
-          curl -fsS -o /dev/null http://localhost:8080/app.js
-          curl -fsS "http://localhost:8080/socket.io/?EIO=4&transport=polling" | grep -q sid
+          G='Host: gribouille.localhost'
+          curl -fsS -H "$G" http://localhost/ | grep -q Gribouille
+          curl -fsSI -H "$G" http://localhost/ | grep -qi content-security-policy
+          curl -fsSI -H "$G" http://localhost/app.js | grep -qi "cache-control: no-cache"
+          curl -fsS -H "$G" http://localhost/api/health
+          curl -fsS -H "$G" http://localhost/api/leaderboard
+          curl -fsS -H "$G" -o /dev/null http://localhost/socket.io/socket.io.min.js
+          curl -fsS -H "$G" -o /dev/null http://localhost/app.js
+          curl -fsS -H "$G" "http://localhost/socket.io/?EIO=4&transport=polling" | grep -q sid
+      - name: Vérifier le reste de l'infrastructure
+        run: |
+          . ./.env
+          # Grafana : accessible via le proxy
+          curl -fsS -H 'Host: grafana.localhost' http://localhost/api/health
+          # Interfaces d'admin : refusées sans mot de passe, ouvertes avec
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: mail.localhost' http://localhost/)" = 401
+          curl -fsS -u "$ADMIN_USER:$ADMIN_PASSWORD" -H 'Host: mail.localhost' -o /dev/null http://localhost/
+          curl -fsS -u "$ADMIN_USER:$ADMIN_PASSWORD" -H 'Host: prometheus.localhost' http://localhost/-/healthy
+          # Réplication Redis active
+          docker compose exec -T redis-master redis-cli info replication | grep -q connected_slaves:1
+          # Redis injoignable depuis web (réseau interne)
+          if docker compose exec -T web sh -c "nc -z -w 2 redis-master 6379"; then
+            echo "web ne devrait pas joindre Redis"; exit 1
+          fi
+          # Un backup a bien été écrit dans le volume
+          docker compose exec -T redis-backup sh -c "ls /backups/redis-*.rdb"
       - name: Logs en cas d'échec
         if: failure()
         run: docker compose logs
