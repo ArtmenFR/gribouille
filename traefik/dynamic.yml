@@ -1,7 +1,5 @@
-# Routage : un sous-domaine par service.
-# Les règles utilisent une expression régulière sur le début du nom d'hôte, donc le domaine
-# n'a pas besoin d'être écrit ici : gribouille.localhost, gribouille.192.168.56.10.nip.io,
-# gribouille.vm.local… tout fonctionne.
+# un sous-domaine par service
+# regex sur le debut du nom, comme ca marche avec .localhost ou .<ip>.nip.io
 http:
   routers:
     gribouille:
@@ -12,7 +10,7 @@ http:
     grafana:
       rule: 'HostRegexp(`^grafana\..+$`)'
       entryPoints: [web]
-      service: grafana        # Grafana a sa propre authentification
+      service: grafana   # grafana a deja son login
 
     prometheus:
       rule: 'HostRegexp(`^prometheus\..+$`)'
@@ -36,12 +34,12 @@ http:
       rule: 'HostRegexp(`^traefik\..+$`)'
       entryPoints: [web]
       middlewares: [admin-auth]
-      service: api@internal   # dashboard : http://traefik.<domaine>/dashboard/
+      service: api@internal   # dashboard sur /dashboard/
 
   middlewares:
     admin-auth:
       basicAuth:
-        usersFile: /etc/traefik/users.htpasswd   # généré par scripts/init.sh, hors Git
+        usersFile: /etc/traefik/users.htpasswd   # cree par init.sh, pas dans git
         removeHeader: true
 
   services:

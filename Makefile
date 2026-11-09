@@ -2,7 +2,7 @@
 .PHONY: help init up down restart logs ps urls config images dev test clean scan \
         demo-network demo-security demo-volume demo-restart demo-replica demo-backup demo-alert demo-alert-reset
 
-# Port publié (lu dans .env s'il existe, 80 sinon) : sert uniquement à afficher les URLs
+# port lu dans .env, juste pour afficher les urls
 PORT_SUFFIX = $(shell p=$$(sed -n 's/^HTTP_PORT=//p' .env 2>/dev/null); [ -n "$$p" ] && [ "$$p" != 80 ] && echo ":$$p")
 
 help:          ## Affiche cette aide

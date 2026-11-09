@@ -1,7 +1,6 @@
 #!/bin/sh
-# Prépare la configuration locale (idempotent : ne touche pas à ce qui existe déjà).
-#   .env                    mots de passe aléatoires (ignoré par Git)
-#   traefik/users.htpasswd  accès protégé aux interfaces d'administration (ignoré par Git)
+# cree .env (mots de passe aleatoires) et traefik/users.htpasswd
+# ne touche a rien si les fichiers existent deja
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -12,7 +11,7 @@ rand() { openssl rand -hex 16; }
 if [ ! -f .env ]; then
   umask 077
   cat > .env <<EOF
-# Généré par scripts/init.sh : ne pas committer
+# cree par scripts/init.sh, ne pas mettre dans git
 HTTP_PORT=80
 REDIS_PASSWORD=$(rand)
 GRAFANA_ADMIN_PASSWORD=$(rand)
@@ -28,7 +27,7 @@ if [ ! -f traefik/users.htpasswd ]; then
   # shellcheck disable=SC1091
   . ./.env
   printf '%s:%s\n' "${ADMIN_USER:-admin}" "$(openssl passwd -apr1 "$ADMIN_PASSWORD")" > traefik/users.htpasswd
-  chmod 644 traefik/users.htpasswd   # simple hash ; Traefik tourne en non-root et doit pouvoir le lire
+  chmod 644 traefik/users.htpasswd   # traefik (non root) doit pouvoir le lire
   echo "→ traefik/users.htpasswd créé"
 fi
 

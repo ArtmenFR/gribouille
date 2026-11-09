@@ -1,6 +1,5 @@
-# Surcharge pour le développement :
-#   docker compose -f compose.yml -f compose.dev.yml up --build   (ou : make dev)
-# Le code est monté dans les conteneurs : modifie un fichier, recharge la page.
+# mode dev : make dev
+# le code est monte dans les conteneurs, pas besoin de rebuild
 
 services:
   web:
