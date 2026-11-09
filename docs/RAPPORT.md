@@ -2,6 +2,8 @@
 
 Projet du cours de conteneurisation, B3 Systèmes, Réseaux et Cybersécurité, ESGI Reims, octobre 2026.
 
+> **Mise à jour (v2)** : la stack a ensuite été étendue pour le projet de groupe « infrastructure web complète » (Traefik, replica Redis, sauvegardes, Mailpit, Prometheus/Grafana/Alertmanager). Ce rapport décrit la version initiale à 3 conteneurs ; la version actuelle est détaillée dans [`CONTENEURISATION.md`](CONTENEURISATION.md).
+
 Ce document raconte tout le projet : ce qu'on a construit, comment, pourquoi ces choix, et les problèmes réels rencontrés en route avec leur solution. Les détails techniques sont dans deux documents complémentaires :
 
 - [`CONTENEURISATION.md`](CONTENEURISATION.md) : chaque notion Docker utilisée, la sécurité des conteneurs et le déroulé de démonstration.

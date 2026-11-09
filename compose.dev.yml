@@ -1,5 +1,5 @@
 # Surcharge pour le développement :
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#   docker compose -f compose.yml -f compose.dev.yml up --build   (ou : make dev)
 # Le code est monté dans les conteneurs : modifie un fichier, recharge la page.
 
 services:

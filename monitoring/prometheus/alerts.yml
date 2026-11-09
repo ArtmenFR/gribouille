@@ -1,0 +1,45 @@
+groups:
+  - name: gribouille
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $labels.job }} ({{ $labels.instance }}) ne répond plus"
+
+      - alert: RedisReplicaDown
+        expr: redis_connected_slaves{redis_role="master"} < 1
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "Le master Redis n'a plus de replica connecté"
+          description: "Plus de copie à chaud des données : les sauvegardes (prises sur le replica) sont aussi à l'arrêt."
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Redis ({{ $labels.redis_role }}) utilise plus de 80 % de sa mémoire autorisée"
+
+      - alert: ContainerMemoryHigh
+        expr: container_memory_working_set_bytes{name=~"gribouille-.+"} / (container_spec_memory_limit_bytes{name=~"gribouille-.+"} > 0) > 0.9
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.name }} approche de sa limite mémoire (> 90 %)"
+
+      - alert: Http5xxRate
+        expr: sum(rate(traefik_service_requests_total{code=~"5.."}[5m])) > 0.1
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "Traefik renvoie des erreurs 5xx en continu"
+
+      - alert: DiskAlmostFull
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.1
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Moins de 10 % d'espace disque libre sur la VM"

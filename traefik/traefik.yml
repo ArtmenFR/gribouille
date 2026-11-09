@@ -1,0 +1,33 @@
+# Configuration statique de Traefik (lue au démarrage)
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: INFO
+accessLog: {}
+
+api:
+  dashboard: true      # exposé via le routeur "traefik" de dynamic.yml, protégé par mot de passe
+
+ping:
+  entryPoint: ping     # utilisé par le HEALTHCHECK du conteneur
+
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addServicesLabels: true
+
+entryPoints:
+  web:
+    address: ":8000"   # publié sur l'hôte via HTTP_PORT (80 par défaut)
+  metrics:
+    address: ":8082"   # jamais publié : lu par Prometheus sur le réseau proxy
+  ping:
+    address: ":8083"
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true

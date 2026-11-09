@@ -2,15 +2,15 @@
 
 ## Vue d'ensemble
 
-Trois conteneurs orchestrés par Docker Compose, sur deux réseaux :
+Le jeu tient en trois conteneurs (`web`, `server`, `redis-master`), entourés de Traefik, d'un replica Redis, de sauvegardes, d'un service mail et d'une pile de monitoring (voir [`CONTENEURISATION.md`](CONTENEURISATION.md)). Pour le jeu lui-même :
 
 | Service | Image | Rôle | Réseaux | Exposé |
 |---|---|---|---|---|
-| `web` | nginx:1.27-alpine | Sert le front statique, reverse proxy HTTP/WebSocket, en-têtes de sécurité | front | oui (8080) |
-| `server` | node:20-alpine | Logique du jeu temps réel (Socket.io), API `/api/*` | front, back | non |
-| `redis` | redis:7-alpine | Classement global persistant | back (`internal`) | non |
+| `web` | nginx:1.27-alpine | Sert le front statique, relaie HTTP/WebSocket vers `server`, en-têtes de sécurité | proxy, app | non (derrière Traefik) |
+| `server` | node:20-alpine | Logique du jeu temps réel (Socket.io), API `/api/*` | app, data | non |
+| `redis-master` | redis:7-alpine | Classement global persistant (+ `redis-replica`) | data (`internal`) | non |
 
-Le réseau `back` est déclaré `internal: true` : Redis n'a aucune route vers l'extérieur et n'est joignable que par `server`.
+Le réseau `data` est déclaré `internal: true` : Redis n'a aucune route vers l'extérieur et n'est joignable que par `server` (et ses outils : replica, backup, exporters).
 
 ## Cycle d'une partie
 
